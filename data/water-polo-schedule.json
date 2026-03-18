@@ -1,0 +1,25 @@
+{
+  "venue": "Dawn Fraser Baths",
+  "timezone": "Australia/Sydney",
+  "source": "Local schedule assumption. Update this file as needed.",
+  "blocks": [
+    {
+      "dayOfWeek": 2,
+      "start": "18:30",
+      "end": "20:00",
+      "note": "Example Tuesday evening water polo session."
+    },
+    {
+      "dayOfWeek": 4,
+      "start": "18:30",
+      "end": "20:00",
+      "note": "Example Thursday evening water polo session."
+    },
+    {
+      "dayOfWeek": 6,
+      "start": "07:30",
+      "end": "09:30",
+      "note": "Example Saturday morning club use."
+    }
+  ]
+}

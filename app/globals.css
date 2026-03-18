@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --bg: #edf5f7;
+  --bg-accent: #d3e7ec;
+  --card: rgba(255, 255, 255, 0.82);
+  --card-strong: rgba(255, 255, 255, 0.93);
+  --line: rgba(16, 61, 81, 0.12);
+  --text: #123444;
+  --muted: #5d7885;
+  --accent: #0f6c82;
+  --accent-soft: #74b4c1;
+  --good: #0b7f61;
+  --warn: #bf7b12;
+  --bad: #b44747;
+  --shadow: 0 24px 60px rgba(18, 52, 68, 0.12);
+  --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+  --font-sans: "Aptos", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+html {
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top left, rgba(116, 180, 193, 0.45), transparent 35%),
+    radial-gradient(circle at 80% 15%, rgba(255, 255, 255, 0.75), transparent 30%),
+    linear-gradient(180deg, var(--bg-accent), var(--bg));
+}
+
+body {
+  min-height: 100vh;
+  color: var(--text);
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: rgba(15, 108, 130, 0.18);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.card-strong {
+  background: var(--card-strong);
+}
+
+.metric-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.hero-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.9fr);
+}
+
+@media (max-width: 1024px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+  }
+}
