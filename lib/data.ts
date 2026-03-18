@@ -6,6 +6,8 @@ import {
   BEACHWATCH_GEOJSON_URL,
   BEACHWATCH_SITE_URL,
   DAWN_FRASER_COORDS,
+  DAWN_FRASER_MAIN_URL,
+  DAWN_FRASER_OPENING_HOURS_URL,
   OPEN_METEO_FORECAST_URL,
   OPEN_METEO_MARINE_URL,
   SYDNEY_TIMEZONE,
@@ -83,6 +85,16 @@ type WaterPoloEvent = {
   endIso: string;
   title: string;
   location?: string;
+};
+
+type OpeningHoursData = {
+  source: SourceReference;
+  confidence: MetricConfidence;
+  rules: {
+    octNov: { open: string; close: string };
+    decFeb: { open: string; close: string };
+    marApr: { open: string; close: string };
+  };
 };
 
 async function fetchJson<T>(url: string): Promise<T> {
@@ -222,6 +234,49 @@ async function getMarine() {
 
 async function getBeachwatch() {
   return withCache("beachwatch", TTL, async () => fetchJson<BeachwatchFeatureCollection>(BEACHWATCH_GEOJSON_URL));
+}
+
+async function getOpeningHours(): Promise<OpeningHoursData> {
+  return withCache("opening-hours", TTL, async () => {
+    const [hoursHtml, mainHtml] = await Promise.all([
+      fetchText(DAWN_FRASER_OPENING_HOURS_URL),
+      fetchText(DAWN_FRASER_MAIN_URL)
+    ]);
+    const hoursText = cheerio.load(hoursHtml)("body").text().replace(/\s+/g, " ").trim();
+    const mainText = cheerio.load(mainHtml)("body").text().replace(/\s+/g, " ").trim();
+
+    const parseRange = (label: string, fallbackOpen: string, fallbackClose: string) => {
+      const regex = new RegExp(`${label}\\s+(\\d{1,2}\\.\\d{2}am)\\s+-\\s+(\\d{1,2}(?:\\.\\d{2})?pm)`, "i");
+      const match = hoursText.match(regex);
+      return {
+        open: match?.[1] ?? fallbackOpen,
+        close: match?.[2] ?? fallbackClose
+      };
+    };
+
+    return {
+      source: {
+        name: "Inner West Council opening hours",
+        url: DAWN_FRASER_OPENING_HOURS_URL,
+        lastUpdated: new Date().toISOString(),
+        note: "Official seasonal opening hours plus closure notes scraped from Inner West Council."
+      },
+      confidence: {
+        label: "Opening hours",
+        value: 0.9,
+        level: "high",
+        note: mainText.toLowerCase().includes("red icon indicates the harbour water is not suitable for swimming and the baths will not be open")
+          ? "Official hours page parsed successfully. Inner West also states that a red Harbourwatch icon means the baths will not be open."
+          : "Official hours page parsed successfully.",
+        source: { name: "Inner West Council", url: DAWN_FRASER_OPENING_HOURS_URL }
+      },
+      rules: {
+        octNov: parseRange("October - November", "7.15am", "6.30pm"),
+        decFeb: parseRange("December - February", "6.45am", "7pm"),
+        marApr: parseRange("March - April", "7.15am", "6.30pm")
+      }
+    };
+  });
 }
 
 async function getTides(): Promise<TideData> {
@@ -492,7 +547,8 @@ function buildTimeline(
   marine: MarinePayload,
   tides: TideData,
   beachwatch: BeachwatchFeatureCollection,
-  waterPolo: Awaited<ReturnType<typeof getWaterPoloStatus>>
+  waterPolo: Awaited<ReturnType<typeof getWaterPoloStatus>>,
+  openingHours: OpeningHoursData
 ) {
   const today = startOfTodaySydney();
   const forecastTimes = forecast.hourly?.time ?? [];
@@ -525,6 +581,7 @@ function buildTimeline(
       beachwatchProps?.latestResultRating,
       beachwatchProps?.latestResult
     );
+    const bathsStatus = getBathsOpenStatus(time, openingHours, beachwatchProps?.pollutionForecast);
 
       return {
         isoTime: time,
@@ -532,6 +589,8 @@ function buildTimeline(
         isNow:
           new Intl.DateTimeFormat("en-CA", { timeZone: SYDNEY_TIMEZONE, hour: "2-digit" }).format(date) === nowHour &&
           time.startsWith(today),
+        isBathsOpen: bathsStatus.isOpen,
+        openStatusReason: bathsStatus.reason,
         weatherCode: forecast.hourly?.weather_code?.[index],
         weatherLabel: weatherCodeLabel(forecast.hourly?.weather_code?.[index]),
         airTempC: forecast.hourly?.temperature_2m?.[index],
@@ -570,7 +629,7 @@ function buildTimeline(
 }
 
 export async function getConditions(mode: ScoreMode = "balanced"): Promise<AggregatedResponse> {
-  const results = await Promise.allSettled([getForecast(), getMarine(), getBeachwatch(), getTides()]);
+  const results = await Promise.allSettled([getForecast(), getMarine(), getBeachwatch(), getTides(), getOpeningHours()]);
   const forecast = results[0].status === "fulfilled" ? results[0].value : {};
   const marine = results[1].status === "fulfilled" ? results[1].value : {};
   const beachwatch = results[2].status === "fulfilled" ? results[2].value : {};
@@ -588,13 +647,35 @@ export async function getConditions(mode: ScoreMode = "balanced"): Promise<Aggre
           source: { name: "Tides", url: TIDE_FALLBACK_URL, note: "Unavailable" },
           confidence: { label: "Tides", value: 0.2, level: "low", note: "Tide source unavailable." }
         } satisfies TideData);
+  const openingHours =
+    results[4].status === "fulfilled"
+      ? results[4].value
+      : ({
+          source: {
+            name: "Opening hours",
+            url: DAWN_FRASER_OPENING_HOURS_URL,
+            note: "Unavailable"
+          },
+          confidence: {
+            label: "Opening hours",
+            value: 0.3,
+            level: "low",
+            note: "Could not verify official opening hours."
+          },
+          rules: {
+            octNov: { open: "7.15am", close: "6.30pm" },
+            decFeb: { open: "6.45am", close: "7pm" },
+            marApr: { open: "7.15am", close: "6.30pm" }
+          }
+        } satisfies OpeningHoursData);
 
   const timeline = buildTimeline(
     forecast as ForecastPayload,
     marine as MarinePayload,
     tides,
     beachwatch as BeachwatchFeatureCollection,
-    waterPolo
+    waterPolo,
+    openingHours
   );
   if (!timeline.length) {
     throw new Error("No hourly forecast data available.");
@@ -606,7 +687,10 @@ export async function getConditions(mode: ScoreMode = "balanced"): Promise<Aggre
   const remaining = scored.slice(currentIndex);
   const bestToday = remaining.reduce((best, hour) => (hour.score > best.score ? hour : best), remaining[0]);
   const bestIndex = remaining.findIndex((hour) => hour.isoTime === bestToday.isoTime);
-  const bestWindow = formatWindow(bestToday.isoTime, remaining[Math.min(remaining.length - 1, bestIndex + 1)].isoTime);
+  const bestWindow = bestToday.isBathsOpen
+    ? formatWindow(bestToday.isoTime, remaining[Math.min(remaining.length - 1, bestIndex + 1)].isoTime)
+    : "No open window today";
+  const nextOpenHour = remaining.find((hour) => hour.isBathsOpen);
 
   const weatherConfidence = {
     label: "Weather",
@@ -647,6 +731,20 @@ export async function getConditions(mode: ScoreMode = "balanced"): Promise<Aggre
     source: { name: "Open-Meteo", url: "https://open-meteo.com/" }
   } satisfies MetricConfidence;
 
+  const bathsStatus = current.isBathsOpen
+    ? {
+        isOpenNow: true,
+        statusLabel: "Open now",
+        reason: current.openStatusReason,
+        nextOpenWindow: undefined
+      }
+    : {
+        isOpenNow: false,
+        statusLabel: "Closed now",
+        reason: current.openStatusReason,
+        nextOpenWindow: nextOpenHour ? formatSydneyTime(nextOpenHour.isoTime) : undefined
+      };
+
   return {
     fetchedAt: new Date().toISOString(),
     timezone: SYDNEY_TIMEZONE,
@@ -657,6 +755,7 @@ export async function getConditions(mode: ScoreMode = "balanced"): Promise<Aggre
     recommendation: recommendationLabel(current.score),
     bestWindow,
     bestWindowReason: explainBestTime(current, bestToday),
+    bathsStatus,
     timeline,
     sources: [
       {
@@ -677,6 +776,7 @@ export async function getConditions(mode: ScoreMode = "balanced"): Promise<Aggre
         lastUpdated: new Date().toISOString(),
         note: "Sea surface temperature near Dawn Fraser Baths."
       },
+      openingHours.source,
       tides.source,
       waterPolo.source
     ],
@@ -698,13 +798,160 @@ export async function getConditions(mode: ScoreMode = "balanced"): Promise<Aggre
       weather: weatherConfidence,
       marine: marineConfidence,
       rainfall: rainfallConfidence,
-      waterPolo: waterPolo.confidence
+      waterPolo: waterPolo.confidence,
+      openingHours: openingHours.confidence
     },
     assumptions: [
       "Sunlight is a heuristic based on solar position and a practical assumption that the baths favour north-west to west sun later in the day.",
       "Water temperature uses the nearest marine grid sea-surface value, not an on-site harbour thermometer.",
+      "Opening status uses the official Inner West seasonal hours and closure rules. If the baths are closed, the score is forced to 0.",
       "If WorldTides is not configured, tide height is interpolated from WillyWeather's Balmain East daily tide events.",
       "Water polo first attempts the Balmain Water Polo calendar, then falls back to the local JSON schedule when the site blocks automated fetches."
     ]
   };
+}
+
+function parseMinutes(timeText: string) {
+  const normalized = timeText.trim().toLowerCase();
+  const match = normalized.match(/(\d{1,2})(?:\.(\d{2}))?(am|pm)/);
+  if (!match) return null;
+  let hours = Number(match[1]);
+  const minutes = Number(match[2] ?? "0");
+  const meridiem = match[3];
+  if (meridiem === "pm" && hours !== 12) hours += 12;
+  if (meridiem === "am" && hours === 12) hours = 0;
+  return hours * 60 + minutes;
+}
+
+function getBathsOpenStatus(isoTime: string, openingHours: OpeningHoursData, pollutionForecast?: string) {
+  const date = new Date(isoTime);
+  const month = Number(
+    new Intl.DateTimeFormat("en-AU", {
+      timeZone: SYDNEY_TIMEZONE,
+      month: "numeric"
+    }).format(date)
+  );
+  const minutesNow =
+    Number(
+      new Intl.DateTimeFormat("en-AU", {
+        timeZone: SYDNEY_TIMEZONE,
+        hour: "numeric",
+        hourCycle: "h23"
+      }).format(date)
+    ) *
+      60 +
+    Number(
+      new Intl.DateTimeFormat("en-AU", {
+        timeZone: SYDNEY_TIMEZONE,
+        minute: "2-digit"
+      }).format(date)
+    );
+
+  const monthRules =
+    month === 10 || month === 11
+      ? openingHours.rules.octNov
+      : month === 12 || month === 1 || month === 2
+        ? openingHours.rules.decFeb
+        : month === 3 || month === 4
+          ? openingHours.rules.marApr
+          : null;
+
+  if (!monthRules) {
+    return {
+      isOpen: false,
+      reason: "Outside the normal Dawn Fraser Baths season."
+    };
+  }
+
+  const closedHoliday = isChristmasDaySydney(date) || isGoodFridaySydney(date);
+  if (closedHoliday) {
+    return {
+      isOpen: false,
+      reason: isChristmasDaySydney(date) ? "Closed on Christmas Day." : "Closed on Good Friday."
+    };
+  }
+
+  if ((pollutionForecast ?? "").toLowerCase().includes("very likely")) {
+    return {
+      isOpen: false,
+      reason: "Likely closed due to Harbourwatch water-quality risk."
+    };
+  }
+
+  const openMinutes = parseMinutes(monthRules.open);
+  const closeMinutes = parseMinutes(monthRules.close);
+  if (openMinutes === null || closeMinutes === null) {
+    return {
+      isOpen: true,
+      reason: "Opening-hours parse fallback."
+    };
+  }
+
+  if (minutesNow < openMinutes || minutesNow >= closeMinutes) {
+    return {
+      isOpen: false,
+      reason: `Closed outside official hours (${monthRules.open}-${monthRules.close}).`
+    };
+  }
+
+  return {
+    isOpen: true,
+    reason: `Within official hours (${monthRules.open}-${monthRules.close}).`
+  };
+}
+
+function isChristmasDaySydney(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-AU", {
+    timeZone: SYDNEY_TIMEZONE,
+    month: "numeric",
+    day: "numeric"
+  })
+    .format(date)
+    .split("/");
+  const day = Number(parts[0]);
+  const month = Number(parts[1]);
+  return day === 25 && month === 12;
+}
+
+function isGoodFridaySydney(date: Date) {
+  const year = Number(
+    new Intl.DateTimeFormat("en-AU", {
+      timeZone: SYDNEY_TIMEZONE,
+      year: "numeric"
+    }).format(date)
+  );
+  const easterSunday = calculateEasterSunday(year);
+  const goodFriday = new Date(easterSunday);
+  goodFriday.setDate(easterSunday.getDate() - 2);
+  const currentLocal = new Intl.DateTimeFormat("en-CA", {
+    timeZone: SYDNEY_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(date);
+  const goodFridayLocal = new Intl.DateTimeFormat("en-CA", {
+    timeZone: SYDNEY_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(goodFriday);
+  return currentLocal === goodFridayLocal;
+}
+
+function calculateEasterSunday(year: number) {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(Date.UTC(year, month - 1, day));
 }

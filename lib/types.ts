@@ -23,6 +23,8 @@ export type HourlyCondition = {
   isoTime: string;
   label: string;
   isNow: boolean;
+  isBathsOpen: boolean;
+  openStatusReason: string;
   weatherCode?: number;
   weatherLabel: string;
   airTempC?: number;
@@ -84,6 +86,12 @@ export type AggregatedResponse = {
   recommendation: string;
   bestWindow: string;
   bestWindowReason: string;
+  bathsStatus: {
+    isOpenNow: boolean;
+    statusLabel: string;
+    reason: string;
+    nextOpenWindow?: string;
+  };
   timeline: HourlyCondition[];
   sources: SourceReference[];
   confidences: {
@@ -95,6 +103,7 @@ export type AggregatedResponse = {
     marine: MetricConfidence;
     rainfall: MetricConfidence;
     waterPolo: MetricConfidence;
+    openingHours: MetricConfidence;
   };
   assumptions: string[];
 };

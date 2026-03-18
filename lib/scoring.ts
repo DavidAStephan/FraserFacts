@@ -75,6 +75,22 @@ function normalizeWaterPolo(hour: HourlyCondition) {
 }
 
 export function scoreHour(hour: HourlyCondition, weights: ScoringWeights): ScoredHour {
+  if (!hour.isBathsOpen) {
+    return {
+      ...hour,
+      score: 0,
+      confidence: clamp(average([hour.rawConfidence, 0.9])),
+      scoreBreakdown: (Object.keys(weights) as Array<keyof ScoringWeights>).map((key) => ({
+        key,
+        weight: weights[key],
+        normalized: 0,
+        contribution: 0,
+        summary: "Closed"
+      })),
+      summary: `Closed: ${hour.openStatusReason}`
+    };
+  }
+
   const normalized = {
     pollution: normalizePollution(hour),
     rainfall: normalizeRainfall(hour),
@@ -152,6 +168,14 @@ export function recommendationLabel(score: number) {
 }
 
 export function explainBestTime(current: ScoredHour, best: ScoredHour) {
+  if (!best.isBathsOpen) {
+    return "The baths appear closed for the rest of today, so there is no later swim window to recommend.";
+  }
+
+  if (!current.isBathsOpen) {
+    return `Best later because the baths are currently closed. ${best.openStatusReason}`;
+  }
+
   if (best.isoTime === current.isoTime) {
     return "Current conditions already look as good as the rest of today based on the available data.";
   }

@@ -209,6 +209,7 @@ export function Dashboard() {
   const tideNow = current.tideHeightM !== undefined ? `${toOneDecimal(current.tideHeightM)} m, ${current.tideState}` : "Unknown";
   const uvText = current.uvIndex !== undefined ? `${toOneDecimal(current.uvIndex)}` : "Unknown";
   const bestUvText = best.uvIndex !== undefined ? `${toOneDecimal(best.uvIndex)}` : "Unknown";
+  const recommendationText = data.bathsStatus.isOpenNow ? derived.recommendation : "Closed now";
 
   return (
     <main className="mx-auto max-w-7xl px-5 py-6 md:px-8 md:py-8">
@@ -250,9 +251,22 @@ export function Dashboard() {
           <div className="mb-5 flex flex-wrap items-center gap-3">
             <ConfidencePill confidence={derived.currentConfidence} />
             <ConfidencePill confidence={derived.bestConfidence} />
+            <ConfidencePill confidence={data.confidences.openingHours} />
             <span className="rounded-full border border-slate-200 bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
               {mode === "strict" ? "Strict water-quality mode" : "Balanced mode"}
             </span>
+          </div>
+          <div
+            className={`mb-5 rounded-[24px] border px-4 py-3 text-sm font-semibold ${
+              data.bathsStatus.isOpenNow
+                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                : "border-rose-200 bg-rose-50 text-rose-800"
+            }`}
+          >
+            {data.bathsStatus.statusLabel}: {data.bathsStatus.reason}
+            {!data.bathsStatus.isOpenNow && data.bathsStatus.nextOpenWindow
+              ? ` Next open today around ${data.bathsStatus.nextOpenWindow}.`
+              : ""}
           </div>
           <div className="grid gap-6 md:grid-cols-[1.1fr_0.9fr]">
             <div>
@@ -261,15 +275,19 @@ export function Dashboard() {
                 <span className="font-[var(--font-display)] text-7xl leading-none">{current.score.toFixed(1)}</span>
                 <span className="pb-2 text-xl text-[var(--muted)]">/10</span>
               </div>
-              <p className="mt-4 inline-flex rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white">
-                {derived.recommendation}
+              <p
+                className={`mt-4 inline-flex rounded-full px-4 py-2 text-sm font-semibold text-white ${
+                  data.bathsStatus.isOpenNow ? "bg-[var(--accent)]" : "bg-rose-600"
+                }`}
+              >
+                {recommendationText}
               </p>
               <p className="mt-5 max-w-2xl text-base leading-7 text-[var(--muted)]">{current.summary}</p>
               <div className="mt-6 grid gap-4 md:grid-cols-2">
                 <div className="rounded-[24px] border border-[var(--line)] bg-white/60 p-4">
                   <p className="text-sm uppercase tracking-[0.22em] text-[var(--muted)]">Best time today</p>
                   <p className="mt-2 text-4xl font-semibold">{best.score.toFixed(1)} / 10</p>
-                  <p className="mt-2 text-sm font-semibold text-[var(--accent)]">{derived.bestWindow}</p>
+                  <p className="mt-2 text-sm font-semibold text-[var(--accent)]">{data.bestWindow}</p>
                   <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{derived.bestReason}</p>
                 </div>
                 <div className="rounded-[24px] border border-[var(--line)] bg-white/60 p-4">
@@ -320,6 +338,13 @@ export function Dashboard() {
       </section>
 
       <section className="metric-grid mb-8">
+        {factorCard(
+          "Baths status",
+          data.bathsStatus.statusLabel,
+          data.bathsStatus.reason,
+          data.confidences.openingHours,
+          <AlertTriangle className="h-5 w-5" />
+        )}
         {factorCard(
           "Pollution risk",
           current.pollutionSummary,
