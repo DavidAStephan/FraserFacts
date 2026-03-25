@@ -1,6 +1,6 @@
 # Fraser Facts
 
-Fraser Facts is a local-only dashboard for deciding whether to swim at Dawn Fraser Baths in Balmain, Sydney. It pulls live conditions where feasible, scores the current window out of 10, finds the best remaining swim window today, and shows the reasoning transparently.
+Fraser Facts is a dashboard for deciding whether to swim at Dawn Fraser Baths in Balmain, Sydney. It pulls live conditions where feasible, scores the current window out of 10, finds the best remaining swim window today, and shows the reasoning transparently.
 
 ## Chosen stack
 
