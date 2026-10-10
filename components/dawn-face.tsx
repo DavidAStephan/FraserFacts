@@ -171,7 +171,7 @@ export function DawnFace({ score, closed = false }: { score: number; closed?: bo
       className="relative flex aspect-square w-full max-w-[320px] flex-col items-center justify-center overflow-hidden rounded-[32px] border-[3px] border-white sticker"
       style={{ background: `linear-gradient(160deg, ${tint[0]}, ${tint[1]})` }}
     >
-      <svg viewBox="0 0 200 200" role="img" aria-label={`Mood buddy: ${label}`} className="h-[78%] w-[78%]">
+      <svg viewBox="0 0 200 200" role="img" aria-label={`Izzy the water drop: ${label}`} className="h-[78%] w-[78%]">
         <defs>
           <linearGradient id="dropBody" x1="0" x2="0" y1="0" y2="1">
             <stop offset="0%" stopColor="#8be9ff" />

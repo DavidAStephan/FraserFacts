@@ -313,7 +313,7 @@ export function Dashboard() {
               </div>
             </div>
             <div className="rounded-[32px] border-[3px] border-[var(--line)] bg-[linear-gradient(180deg,#fff,#fff0f7)] p-5">
-              <p className="text-center text-sm font-extrabold uppercase tracking-[0.2em] text-[var(--accent)]">Mood buddy</p>
+              <p className="text-center text-sm font-extrabold uppercase tracking-[0.2em] text-[var(--accent)]">Izzy&apos;s mood</p>
               <div className="mt-4 flex justify-center">
                 <DawnFace score={current.score} closed={!data.bathsStatus.isOpenNow} />
               </div>
