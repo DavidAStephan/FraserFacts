@@ -77,9 +77,11 @@ function SealMouth({ mood }: { mood: Mood }) {
   };
   return (
     <g>
-      <path d="M100 113 L100 122" {...line} />
-      <path d={curves[mood]} {...line} />
-      {mood === "excellent" ? <path d="M96 125 Q100 133 104 125 Z" fill="#ff8fb8" stroke={INK} strokeWidth={2} strokeLinejoin="round" /> : null}
+      <path d="M100 113 L100 130" {...line} />
+      <g transform="translate(0 8)">
+        <path d={curves[mood]} {...line} />
+        {mood === "excellent" ? <path d="M96 125 Q100 133 104 125 Z" fill="#ff8fb8" stroke={INK} strokeWidth={2} strokeLinejoin="round" /> : null}
+      </g>
     </g>
   );
 }
