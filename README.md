@@ -15,7 +15,7 @@ Next.js + React + TypeScript is the best fit here because it gives you:
 - NSW Beachwatch GeoJSON API for pollution forecast and latest result context
 - Open-Meteo forecast API for hourly weather, UV, wind, and rainfall history
 - Open-Meteo marine API for sea surface temperature near the baths
-- WillyWeather Balmain East tides page as the default tide fallback, with interpolation between listed high and low tides
+- WillyWeather Balmain East tides page as the default tide source (today's and tomorrow's high and low tides, shown on the Tide card, with interpolation between them)
 - Optional WorldTides API if you set `WORLDTIDES_API_KEY` in `.env.local`
 - Inner West Council opening-hours page for the seasonal hours
 - Balmain Water Polo calendar feed as the primary water polo source

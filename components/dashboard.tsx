@@ -21,6 +21,7 @@ import { DawnFace } from "@/components/dawn-face";
 import { HourlyChart } from "@/components/hourly-chart";
 import { MAX_WEIGHT_POINTS, WeightSettings } from "@/components/weight-settings";
 import { Sakura } from "@/components/sakura";
+import { TideTimes, describeTide, nextTide } from "@/components/tide-times";
 
 const STORAGE_KEY = "fraser-facts-settings-v1";
 
@@ -78,7 +79,7 @@ type Tone = keyof typeof TONES;
 function factorCard(
   title: string,
   value: string,
-  subtitle: string,
+  subtitle: ReactNode,
   confidence: MetricConfidence,
   icon: ReactNode,
   tone: Tone
@@ -99,7 +100,7 @@ function factorCard(
         {title}
       </p>
       <p className="mt-2 font-display text-2xl font-semibold text-[var(--text)]">{value}</p>
-      <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{subtitle}</p>
+      <div className="mt-2 text-sm leading-6 text-[var(--muted)]">{subtitle}</div>
     </article>
   );
 }
@@ -237,6 +238,7 @@ export function Dashboard() {
   const tideNow = current.tideHeightM !== undefined ? `${toOneDecimal(current.tideHeightM)} m, ${current.tideState}` : "Unknown";
   const uvText = current.uvIndex !== undefined ? `${toOneDecimal(current.uvIndex)}` : "Unknown";
   const bestUvText = best.uvIndex !== undefined ? `${toOneDecimal(best.uvIndex)}` : "Unknown";
+  const upcomingTide = nextTide(data.tideEvents ?? []);
   const recommendationText = data.bathsStatus.isOpenNow ? derived.recommendation : "Closed now";
 
   return (
@@ -336,7 +338,9 @@ export function Dashboard() {
                   <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#0b9bb5]">🌊 Right now</p>
                   <p className="mt-2 text-lg font-semibold">{weatherNow}</p>
                   <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                    Tide {tideNow}. UV {uvText} now and {bestUvText} near the best window.
+                    Tide {tideNow}
+                    {upcomingTide ? ` (${describeTide(upcomingTide).toLowerCase()})` : ""}. UV {uvText} now and {bestUvText} near
+                    the best window.
                   </p>
                 </div>
               </div>
@@ -433,7 +437,7 @@ export function Dashboard() {
         {factorCard(
           "Tide",
           tideNow,
-          "Lower tide scores better in this model. Falling or low tide gets a modest boost.",
+          <TideTimes events={data.tideEvents ?? []} />,
           data.confidences.tides,
           <Waves className="h-5 w-5" />,
           "lavender"

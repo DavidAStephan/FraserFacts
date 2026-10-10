@@ -14,7 +14,7 @@ import {
   WATER_POLO_EVENTS_URL
 } from "@/lib/constants";
 import { withCache } from "@/lib/cache";
-import { AggregatedResponse, HourlyCondition, MetricConfidence, ScoreMode, SourceReference } from "@/lib/types";
+import { AggregatedResponse, HourlyCondition, MetricConfidence, ScoreMode, SourceReference, TideEvent } from "@/lib/types";
 import { DEFAULT_WEIGHTS, explainBestTime, findBestWindow, recommendationLabel, scoreTimeline } from "@/lib/scoring";
 import {
   average,
@@ -61,12 +61,6 @@ type BeachwatchFeatureCollection = {
       latestResultObservationDate?: string;
     };
   }>;
-};
-
-type TideEvent = {
-  timeIso: string;
-  heightM: number;
-  type: "high" | "low";
 };
 
 type TideData = {
@@ -321,7 +315,7 @@ async function getTides(): Promise<TideData> {
   if (process.env.WORLDTIDES_API_KEY) {
     const day = startOfTodaySydney();
     return withCache("tides-worldtides", TTL, async () => {
-      const worldTidesUrl = `https://www.worldtides.info/api/v3?heights&lat=${DAWN_FRASER_COORDS.latitude}&lon=${DAWN_FRASER_COORDS.longitude}&date=${day}&days=1&key=${process.env.WORLDTIDES_API_KEY}`;
+      const worldTidesUrl = `https://www.worldtides.info/api/v3?heights&lat=${DAWN_FRASER_COORDS.latitude}&lon=${DAWN_FRASER_COORDS.longitude}&date=${day}&days=2&key=${process.env.WORLDTIDES_API_KEY}`;
       const data = await fetchJson<{ heights?: Array<{ dt: number; height: number }> }>(worldTidesUrl);
       const points = data.heights ?? [];
       const events: TideEvent[] = [];
@@ -359,29 +353,33 @@ async function getTides(): Promise<TideData> {
   return withCache("tides-scrape", TTL, async () => {
     const html = await fetchText(TIDE_FALLBACK_URL);
     const $ = cheerio.load(html);
-    const todayBlock = $("section.forecast li.day").first();
-    const dateParts = todayBlock.find("time").attr("datetime");
-
-    if (!todayBlock.length || !dateParts) {
+    // Today and tomorrow, so there is always a "next tide" and late-evening hours interpolate properly.
+    const dayBlocks = $("section.forecast li.day").slice(0, 2);
+    if (!dayBlocks.length) {
       throw new Error("Could not parse WillyWeather tide block");
     }
 
     const events: TideEvent[] = [];
-    todayBlock.find("ul.icon-list.static li").each((_, element) => {
-      const item = $(element);
-      const className = item.attr("class") ?? "";
-      const timeText = item.find("h3").text().trim();
-      const heightText = item.find("span").text().trim().replace("m", "");
-      const type = className.includes("point-high") ? "high" : className.includes("point-low") ? "low" : null;
+    dayBlocks.each((_, dayElement) => {
+      const dayBlock = $(dayElement);
+      const dateParts = dayBlock.find("time").attr("datetime");
+      if (!dateParts) return;
+      dayBlock.find("ul.icon-list.static li").each((_, element) => {
+        const item = $(element);
+        const className = item.attr("class") ?? "";
+        const timeText = item.find("h3").text().trim();
+        const heightText = item.find("span").text().trim().replace("m", "");
+        const type = className.includes("point-high") ? "high" : className.includes("point-low") ? "low" : null;
 
-      if (!type || !timeText || !heightText) {
-        return;
-      }
+        if (!type || !timeText || !heightText) {
+          return;
+        }
 
-      events.push({
-        timeIso: parseTideDate(dateParts, timeText).toISOString(),
-        heightM: Number(heightText),
-        type
+        events.push({
+          timeIso: parseTideDate(dateParts, timeText).toISOString(),
+          heightM: Number(heightText),
+          type
+        });
       });
     });
 
@@ -390,7 +388,11 @@ async function getTides(): Promise<TideData> {
     }
 
     const fetchedAt = new Date().toISOString();
-    const eventSummary = events.map((event) => `${event.type} ${formatSydneyTime(event.timeIso)} ${event.heightM.toFixed(2)} m`).join(", ");
+    const today = startOfTodaySydney();
+    const eventSummary = events
+      .filter((event) => sydneyDateKey(new Date(event.timeIso)) === today)
+      .map((event) => `${event.type} ${formatSydneyTime(event.timeIso)} ${event.heightM.toFixed(2)} m`)
+      .join(", ");
 
     return {
       events,
@@ -398,7 +400,7 @@ async function getTides(): Promise<TideData> {
         name: "WillyWeather Balmain East Tides",
         url: TIDE_FALLBACK_URL,
         lastUpdated: fetchedAt,
-        note: `Scraped WillyWeather's Today tide block at ${formatSydneyTime(fetchedAt)}. Parsed events: ${eventSummary}.`
+        note: `Scraped WillyWeather's tide times at ${formatSydneyTime(fetchedAt)}. Today: ${eventSummary}.`
       },
       confidence: {
         label: "Tides",
@@ -702,6 +704,7 @@ export async function getConditions(mode: ScoreMode = "balanced"): Promise<Aggre
     bestWindowReason: explainBestTime(current, bestToday),
     bathsStatus,
     timeline,
+    tideEvents: [...tides.events].sort((a, b) => a.timeIso.localeCompare(b.timeIso)),
     sources: [
       {
         name: "NSW Beachwatch",

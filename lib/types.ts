@@ -76,6 +76,12 @@ export type ScoredHour = HourlyCondition & {
 
 export type ScoreMode = "strict" | "balanced";
 
+export type TideEvent = {
+  timeIso: string;
+  heightM: number;
+  type: "high" | "low";
+};
+
 export type AggregatedResponse = {
   fetchedAt: string;
   timezone: string;
@@ -93,6 +99,8 @@ export type AggregatedResponse = {
     nextOpenWindow?: string;
   };
   timeline: HourlyCondition[];
+  // High and low tides for today and tomorrow, in time order.
+  tideEvents: TideEvent[];
   sources: SourceReference[];
   confidences: {
     current: MetricConfidence;
