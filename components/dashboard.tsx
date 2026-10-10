@@ -20,6 +20,7 @@ import { ConfidencePill } from "@/components/confidence-pill";
 import { DawnFace } from "@/components/dawn-face";
 import { HourlyChart } from "@/components/hourly-chart";
 import { WeightSettings } from "@/components/weight-settings";
+import { Sakura } from "@/components/sakura";
 
 const STORAGE_KEY = "fraser-facts-settings-v1";
 
@@ -224,11 +225,21 @@ export function Dashboard() {
   const recommendationText = data.bathsStatus.isOpenNow ? derived.recommendation : "Closed now";
 
   return (
-    <main className="mx-auto max-w-7xl px-5 py-6 md:px-8 md:py-8">
+    <>
+    <Sakura />
+    <main className="relative z-10 mx-auto max-w-7xl px-5 py-6 md:px-8 md:py-8">
       <header className="mb-8 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-xs font-extrabold uppercase tracking-[0.3em] text-[var(--accent)]">✦ Balmain swim dashboard ✦</p>
-          <h1 className="rainbow-text mt-2 pb-1 font-display text-6xl font-bold leading-none md:text-7xl">Fraser Facts</h1>
+          <div className="mt-2 flex items-start gap-3">
+            <h1 className="anime-title rainbow-text pb-2 font-display text-6xl font-bold leading-none md:text-7xl">Fraser Facts</h1>
+            <span
+              title="Kira kira means sparkly!"
+              className="mt-1 rotate-12 rounded-full border-[3px] border-[#2b2350] bg-[#ffc93c] px-3 py-1 font-display text-sm font-bold text-[#2b2350] sticker"
+            >
+              キラキラ ✦
+            </span>
+          </div>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--muted)]">
             Live advice for Dawn Fraser Baths using Beachwatch water-quality context, weather, tides, marine
             temperature, rainfall drag, direct sun heuristics, and the Balmain Water Polo calendar.
@@ -260,7 +271,7 @@ export function Dashboard() {
       </header>
 
       <section className="hero-grid mb-8">
-        <div className="card card-strong rounded-[36px] p-6 md:p-8">
+        <div className="card card-strong overflow-hidden rounded-[36px] p-6 md:p-8">
           <div className="mb-5 flex flex-wrap items-center gap-3">
             <ConfidencePill confidence={derived.currentConfidence} />
             <ConfidencePill confidence={derived.bestConfidence} />
@@ -284,8 +295,9 @@ export function Dashboard() {
           <div className="grid gap-6 md:grid-cols-[1.1fr_0.9fr]">
             <div>
               <p className="text-sm font-extrabold uppercase tracking-[0.2em] text-[var(--accent)]">Current score</p>
-              <div className="mt-3 flex items-end gap-4">
-                <span className="rainbow-text font-display text-8xl font-bold leading-none">{current.score.toFixed(1)}</span>
+              <div className="relative mt-3 flex items-end gap-4">
+                <div aria-hidden="true" className="speed-lines pointer-events-none absolute -left-16 -top-24 h-72 w-72" />
+                <span className="anime-title rainbow-text relative font-display text-8xl font-bold leading-none">{current.score.toFixed(1)}</span>
                 <span className="pb-2 text-xl text-[var(--muted)]">/10</span>
               </div>
               <p
@@ -323,7 +335,7 @@ export function Dashboard() {
 
         <aside className="card rounded-[36px] p-6 md:p-8">
           <p className="text-sm font-extrabold uppercase tracking-[0.2em] text-[var(--accent)]">Hourly outlook</p>
-          <h2 className="mt-3 font-display text-3xl">Score trend across the rest of today</h2>
+          <h2 className="mt-3 font-display text-3xl"><span className="marker">Score trend across the rest of today</span></h2>
           <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
             The sparkline re-scores each hour using your local weight settings, so you can push the model harder on
             water quality or balance it toward comfort.
@@ -435,7 +447,7 @@ export function Dashboard() {
       <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <article className="card rounded-[32px] p-6 md:p-7">
           <p className="text-sm font-extrabold uppercase tracking-[0.2em] text-[var(--accent)]">Why the score looks like this</p>
-          <h2 className="mt-3 font-display text-3xl">Transparent scoring</h2>
+          <h2 className="mt-3 font-display text-3xl"><span className="marker">Transparent scoring</span></h2>
           <p className="mt-4 text-sm leading-6 text-[var(--muted)]">
             Each factor is normalized to a 0-1 preference score, then combined as a weighted sum out of 10. UV is
             displayed prominently but is not a major penalty on its own.
@@ -462,7 +474,7 @@ export function Dashboard() {
 
         <article className="card rounded-[32px] p-6 md:p-7">
           <p className="text-sm font-extrabold uppercase tracking-[0.2em] text-[var(--accent)]">Advisory notes</p>
-          <h2 className="mt-3 font-display text-3xl">Assumptions and sources</h2>
+          <h2 className="mt-3 font-display text-3xl"><span className="marker">Assumptions and sources</span></h2>
           <ul className="mt-5 space-y-3 text-sm leading-6 text-[var(--muted)]">
             {data.assumptions.map((assumption) => (
               <li key={assumption} className="rounded-2xl bg-white/80 px-4 py-3">
@@ -481,7 +493,7 @@ export function Dashboard() {
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-sm font-extrabold uppercase tracking-[0.2em] text-[var(--accent)]">Sources</p>
-            <h2 className="mt-2 font-display text-3xl">Last updated and provenance</h2>
+            <h2 className="mt-2 font-display text-3xl"><span className="marker">Last updated and provenance</span></h2>
           </div>
           <p className="text-sm text-[var(--muted)]">Dashboard refresh: {formatSydneyDateTime(data.fetchedAt)}</p>
         </div>
@@ -507,5 +519,6 @@ export function Dashboard() {
         </div>
       </section>
     </main>
+    </>
   );
 }

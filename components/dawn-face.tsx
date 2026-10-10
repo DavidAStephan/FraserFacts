@@ -4,15 +4,15 @@ import type { ReactNode } from "react";
 
 type Mood = "excellent" | "good" | "okay" | "mixed" | "poor" | "veryPoor" | "miserable" | "sleeping";
 
-const MOODS: Record<Mood, { label: string; tint: [string, string] }> = {
-  excellent: { label: "Splash-tastic!", tint: ["#fff3b0", "#ffd1e8"] },
-  good: { label: "Swim time!", tint: ["#d9fbe9", "#c9f1ff"] },
-  okay: { label: "Pretty good!", tint: ["#e3f6ff", "#e8e0ff"] },
-  mixed: { label: "Hmm, maybe...", tint: ["#fff1d6", "#ffe3ef"] },
-  poor: { label: "Not great...", tint: ["#ffe6e6", "#efe6ff"] },
-  veryPoor: { label: "Better not...", tint: ["#ffe0ea", "#e6e9ff"] },
-  miserable: { label: "Nooo!", tint: ["#ffd9df", "#e2ddff"] },
-  sleeping: { label: "Zzz... baths closed", tint: ["#e4e0ff", "#cfe3ff"] }
+const MOODS: Record<Mood, { label: string; kaomoji: string; tint: [string, string] }> = {
+  excellent: { label: "Splash-tastic!", kaomoji: "✧(≧◡≦)✧", tint: ["#fff3b0", "#ffd1e8"] },
+  good: { label: "Swim time!", kaomoji: "(๑˃ᴗ˂)ﻭ", tint: ["#d9fbe9", "#c9f1ff"] },
+  okay: { label: "Pretty good!", kaomoji: "(◕‿◕)", tint: ["#e3f6ff", "#e8e0ff"] },
+  mixed: { label: "Hmm, maybe...", kaomoji: "(・_・;)", tint: ["#fff1d6", "#ffe3ef"] },
+  poor: { label: "Not great...", kaomoji: "(｡•́︿•̀｡)", tint: ["#ffe6e6", "#efe6ff"] },
+  veryPoor: { label: "Better not...", kaomoji: "(╥﹏╥)", tint: ["#ffe0ea", "#e6e9ff"] },
+  miserable: { label: "Nooo!", kaomoji: "(ﾉД`)", tint: ["#ffd9df", "#e2ddff"] },
+  sleeping: { label: "Zzz... closed", kaomoji: "(－_－) zzZ", tint: ["#e4e0ff", "#cfe3ff"] }
 };
 
 function pickMood(score: number, closed: boolean): Mood {
@@ -234,18 +234,21 @@ function Extras({ mood }: { mood: Mood }) {
 
 export function DawnFace({ score, closed = false }: { score: number; closed?: boolean }) {
   const mood = pickMood(score, closed);
-  const { label, tint } = MOODS[mood];
+  const { label, kaomoji, tint } = MOODS[mood];
 
   return (
     <div
-      className="relative flex aspect-square w-full max-w-[320px] flex-col items-center justify-center overflow-hidden rounded-[32px] border-[3px] border-white sticker"
+      className="relative flex aspect-[4/5] w-full max-w-[320px] flex-col items-center justify-center overflow-hidden rounded-[32px] border-[3px] border-white pt-4 sticker"
       style={{ background: `linear-gradient(160deg, ${tint[0]}, ${tint[1]})` }}
     >
-      <svg viewBox="0 0 200 200" role="img" aria-label={`Izzy the seal: ${label}`} className="h-[78%] w-[78%]">
+      <div className="speech-bubble mb-2 rounded-[20px] px-4 py-1.5 text-center sticker">
+        <p className="font-display text-lg font-bold leading-tight text-[var(--text)]">{label}</p>
+        <p className="text-sm font-bold text-[var(--accent)]">{kaomoji}</p>
+      </div>
+      <svg viewBox="0 0 200 200" role="img" aria-label={`Izzy the seal: ${label}`} className="w-[80%]">
         <Seal mood={mood} />
         <Extras mood={mood} />
       </svg>
-      <p className="-mt-1 rounded-full bg-white/85 px-4 py-1 font-display text-lg font-semibold text-[var(--text)] sticker">{label}</p>
     </div>
   );
 }

@@ -125,3 +125,65 @@ body::before {
     animation: none;
   }
 }
+
+/* Anime touches */
+.sakura-petal {
+  position: absolute;
+  top: -24px;
+  opacity: 0.85;
+  animation-name: petal-fall, petal-sway;
+  animation-timing-function: linear, ease-in-out;
+  animation-iteration-count: infinite, infinite;
+  animation-direction: normal, alternate;
+}
+
+@keyframes petal-fall {
+  0% { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(110vh) rotate(540deg); }
+}
+
+@keyframes petal-sway {
+  0% { margin-left: -30px; }
+  100% { margin-left: 30px; }
+}
+
+.anime-title {
+  filter: drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff)
+    drop-shadow(4px 5px 0 #2b2350);
+}
+
+.speed-lines {
+  background: repeating-conic-gradient(from 0deg, rgba(255, 79, 154, 0.16) 0deg 3deg, transparent 3deg 11deg);
+  -webkit-mask-image: radial-gradient(circle, transparent 18%, #000 42%, transparent 72%);
+  mask-image: radial-gradient(circle, transparent 18%, #000 42%, transparent 72%);
+}
+
+.marker {
+  background: linear-gradient(transparent 62%, rgba(255, 201, 60, 0.55) 62%, rgba(255, 201, 60, 0.55) 92%, transparent 92%);
+  padding: 0 0.15em;
+}
+
+.speech-bubble {
+  position: relative;
+  border: 3px solid #2b2350;
+  background: #fff;
+}
+
+.speech-bubble::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -13px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-right: 3px solid #2b2350;
+  border-bottom: 3px solid #2b2350;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sakura-petal {
+    display: none;
+  }
+}
