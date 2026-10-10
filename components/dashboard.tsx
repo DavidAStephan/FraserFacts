@@ -22,6 +22,7 @@ import { HourlyChart } from "@/components/hourly-chart";
 import { MAX_WEIGHT_POINTS, WeightSettings } from "@/components/weight-settings";
 import { Sakura } from "@/components/sakura";
 import { TideTimes, describeTide, nextTide } from "@/components/tide-times";
+import { UvCard } from "@/components/uv-card";
 
 const STORAGE_KEY = "fraser-facts-settings-v1";
 
@@ -384,6 +385,8 @@ export function Dashboard() {
           </div>
         </aside>
       </section>
+
+      <UvCard timeline={data.timeline} currentIsoTime={current.isoTime} />
 
       <section className="metric-grid mb-8">
         {factorCard(
