@@ -26,83 +26,168 @@ function pickMood(score: number, closed: boolean): Mood {
   return "miserable";
 }
 
-const INK = "#2b2350";
+const INK = "#1d1838";
+const OUTLINE = "#34507a";
 
-function SparkleEye({ cx }: { cx: number }) {
+function SealEyes({ mood }: { mood: Mood }) {
+  const line = { stroke: INK, strokeWidth: 3.5, strokeLinecap: "round" as const, fill: "none" };
+  const eye = (cx: number) => {
+    if (mood === "excellent") return <path key={cx} d={`M${cx - 10} 94 Q${cx} 81 ${cx + 10} 94`} {...line} />;
+    if (mood === "sleeping") return <path key={cx} d={`M${cx - 9} 90 Q${cx} 99 ${cx + 9} 90`} {...line} />;
+    if (mood === "miserable") {
+      const dir = cx < 100 ? 1 : -1;
+      return <path key={cx} d={`M${cx - 8 * dir} 84 L${cx + 7 * dir} 91 L${cx - 8 * dir} 98`} {...line} />;
+    }
+    return (
+      <g key={cx}>
+        <ellipse cx={cx} cy={91} rx={10} ry={12} fill={INK} />
+        <ellipse cx={cx} cy={97} rx={7} ry={5} fill="#5b4bb7" opacity={0.7} />
+        <circle cx={cx - 3.5} cy={86} r={4} fill="#fff" />
+        <circle cx={cx + 3.5} cy={96.5} r={2} fill="#fff" />
+      </g>
+    );
+  };
+  const sadBrows = mood === "mixed" || mood === "poor" || mood === "veryPoor";
   return (
     <g>
-      <ellipse cx={cx} cy={122} rx={11} ry={14} fill={INK} />
-      <ellipse cx={cx} cy={128} rx={8} ry={6} fill="#5b4bb7" opacity={0.7} />
-      <circle cx={cx - 4} cy={116} r={4.5} fill="#fff" />
-      <circle cx={cx + 4} cy={129} r={2.2} fill="#fff" />
-    </g>
-  );
-}
-
-function Eyes({ mood }: { mood: Mood }) {
-  const line = { stroke: INK, strokeWidth: 5, strokeLinecap: "round" as const, fill: "none" };
-  if (mood === "excellent") {
-    return (
-      <g {...line}>
-        <path d="M67 126 Q78 110 89 126" />
-        <path d="M111 126 Q122 110 133 126" />
-      </g>
-    );
-  }
-  if (mood === "sleeping") {
-    return (
-      <g {...line}>
-        <path d="M68 121 Q78 131 88 121" />
-        <path d="M112 121 Q122 131 132 121" />
-      </g>
-    );
-  }
-  if (mood === "miserable") {
-    return (
-      <g {...line}>
-        <path d="M68 114 L86 122 L68 130" />
-        <path d="M132 114 L114 122 L132 130" />
-      </g>
-    );
-  }
-  return (
-    <g>
-      <SparkleEye cx={78} />
-      <SparkleEye cx={122} />
-      {mood === "mixed" || mood === "poor" || mood === "veryPoor" ? (
-        <g stroke={INK} strokeWidth={4} strokeLinecap="round">
-          <path d="M68 104 L85 98" />
-          <path d="M132 104 L115 98" />
+      {eye(74)}
+      {eye(126)}
+      {sadBrows ? (
+        <g {...line} strokeWidth={3}>
+          <path d="M64 76 L81 70" />
+          <path d="M136 76 L119 70" />
         </g>
       ) : null}
     </g>
   );
 }
 
-function Mouth({ mood }: { mood: Mood }) {
-  const line = { stroke: INK, strokeWidth: 4.5, strokeLinecap: "round" as const, fill: "none" };
+function SealMouth({ mood }: { mood: Mood }) {
+  const line = { stroke: INK, strokeWidth: 3, strokeLinecap: "round" as const, fill: "none" };
   switch (mood) {
     case "excellent":
-    case "good":
       return (
         <g>
-          <path d="M86 141 Q100 164 114 141 Z" fill="#c2185b" stroke={INK} strokeWidth={3.5} strokeLinejoin="round" />
-          <path d="M92 151 Q100 160 108 151 Q100 147 92 151 Z" fill="#ff8fb8" />
+          <path d="M90 127 Q100 145 110 127 Z" fill="#d6457f" stroke={INK} strokeWidth={2.5} strokeLinejoin="round" />
+          <path d="M94 134 Q100 140 106 134 Q100 131 94 134 Z" fill="#ff9cc2" />
         </g>
       );
+    case "good":
+      return <path d="M92 127 Q100 139 108 127 Z" fill="#d6457f" stroke={INK} strokeWidth={2.5} strokeLinejoin="round" />;
     case "okay":
-      return <path d="M89 144 Q100 154 111 144" {...line} />;
+      return <path d="M94 129 Q100 133 106 129" {...line} />;
     case "mixed":
-      return <path d="M88 148 q4 -5 8 0 t8 0 t8 0" {...line} />;
+      return <path d="M92 131 q4 -3 8 0 t8 0" {...line} />;
     case "poor":
-      return <path d="M90 151 Q100 143 110 151" {...line} />;
+      return <path d="M93 134 Q100 128 107 134" {...line} />;
     case "veryPoor":
-      return <path d="M88 153 Q100 140 112 153" {...line} />;
+      return <path d="M91 136 Q100 126 109 136" {...line} />;
     case "miserable":
-      return <ellipse cx={100} cy={150} rx={10} ry={8} fill="#c2185b" stroke={INK} strokeWidth={3.5} />;
+      return <ellipse cx={100} cy={133} rx={7} ry={6} fill="#d6457f" stroke={INK} strokeWidth={2.5} />;
     case "sleeping":
-      return <ellipse cx={100} cy={147} rx={5} ry={4} fill="#c2185b" stroke={INK} strokeWidth={3} />;
+      return <ellipse cx={100} cy={131} rx={3} ry={2.6} fill="#d6457f" stroke={INK} strokeWidth={2} />;
   }
+}
+
+// Tears and sweat sit on the face.
+function SealFaceExtras({ mood }: { mood: Mood }) {
+  if (mood === "mixed" || mood === "poor") {
+    return <path d="M150 66 Q157 78 150 83 Q143 78 150 66 Z" fill="#c4f1fb" stroke="#1fc8e3" strokeWidth={2} />;
+  }
+  if (mood === "veryPoor") {
+    return <path d="M68 104 Q73 114 68 119 Q63 114 68 104 Z" fill="#c4f1fb" stroke="#1fc8e3" strokeWidth={2} />;
+  }
+  if (mood === "miserable") {
+    return (
+      <g stroke="#c4f1fb" strokeWidth={5} strokeLinecap="round" fill="none">
+        <path d="M70 99 Q66 116 68 132" />
+        <path d="M130 99 Q134 116 132 132" />
+      </g>
+    );
+  }
+  return null;
+}
+
+function Seal({ mood }: { mood: Mood }) {
+  return (
+    <>
+      <defs>
+        <linearGradient id="sealFur" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="#dcedf9" />
+          <stop offset="100%" stopColor="#8db6da" />
+        </linearGradient>
+      </defs>
+      <ellipse cx={100} cy={190} rx={58} ry={6} fill="#2b2350" opacity={0.1} />
+      <g className={mood === "sleeping" ? undefined : "animate-bob"}>
+        {/* Rear flippers */}
+        <g fill="#9cc3e2" stroke={OUTLINE} strokeWidth={2.5} strokeLinejoin="round">
+          <path d="M132 174 Q156 166 170 176 Q160 180 166 190 Q148 188 132 184 Z" />
+          <path d="M126 180 Q140 186 146 196 Q130 196 120 188 Z" />
+        </g>
+        {/* Round, chubby body (seals have no neck) */}
+        <path
+          d="M100 38 C142 38 162 70 162 110 C162 152 148 184 100 186 C52 184 38 152 38 110 C38 70 58 38 100 38 Z"
+          fill="url(#sealFur)"
+          stroke={OUTLINE}
+          strokeWidth={3}
+        />
+        <ellipse cx={100} cy={158} rx={36} ry={24} fill="#eef6fc" opacity={0.85} />
+        <path d="M64 56 Q78 46 94 45" stroke="#fff" strokeWidth={6} strokeLinecap="round" fill="none" opacity={0.6} />
+        {/* Front flippers */}
+        <ellipse cx={46} cy={150} rx={10} ry={22} fill="#9cc3e2" stroke={OUTLINE} strokeWidth={2.5} transform="rotate(28 46 150)" />
+        <ellipse cx={154} cy={150} rx={10} ry={22} fill="#9cc3e2" stroke={OUTLINE} strokeWidth={2.5} transform="rotate(-28 154 150)" />
+        {/* Speckles */}
+        {[
+          [80, 58],
+          [120, 54],
+          [140, 74],
+          [56, 84],
+          [146, 122],
+          [58, 128],
+          [126, 172],
+          [76, 174]
+        ].map(([cx, cy]) => (
+          <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={2.2} fill="#4d6f9c" opacity={0.3} />
+        ))}
+        {/* Flower clip */}
+        <g transform="translate(132 50) scale(0.9)">
+          {[0, 72, 144, 216, 288].map((angle) => (
+            <ellipse key={angle} cx={0} cy={-8} rx={6} ry={8} fill="#ff8fb8" transform={`rotate(${angle})`} stroke={OUTLINE} strokeWidth={2} />
+          ))}
+          <circle r={5} fill="#ffc93c" stroke={OUTLINE} strokeWidth={2} />
+        </g>
+        {/* Rosy cheeks */}
+        <ellipse cx={58} cy={110} rx={10} ry={6} fill="#ff7aa8" opacity={0.5} />
+        <ellipse cx={142} cy={110} rx={10} ry={6} fill="#ff7aa8" opacity={0.5} />
+        <SealEyes mood={mood} />
+        {/* Muzzle, whiskers and nose */}
+        <ellipse cx={91} cy={117} rx={11} ry={8.5} fill="#f4f9fd" stroke={OUTLINE} strokeWidth={1.8} />
+        <ellipse cx={109} cy={117} rx={11} ry={8.5} fill="#f4f9fd" stroke={OUTLINE} strokeWidth={1.8} />
+        {[
+          [86, 116],
+          [90, 120],
+          [94, 116],
+          [106, 116],
+          [110, 120],
+          [114, 116]
+        ].map(([cx, cy]) => (
+          <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={1.1} fill={OUTLINE} opacity={0.6} />
+        ))}
+        <g stroke={OUTLINE} strokeWidth={1.6} strokeLinecap="round" opacity={0.75}>
+          <path d="M80 114 L60 108" />
+          <path d="M80 118 L58 119" />
+          <path d="M81 122 L62 129" />
+          <path d="M120 114 L140 108" />
+          <path d="M120 118 L142 119" />
+          <path d="M119 122 L138 129" />
+        </g>
+        <path d="M93 106 Q100 103 107 106 Q106 113 100 115 Q94 113 93 106 Z" fill={INK} />
+        <ellipse cx={97.5} cy={107.5} rx={2.4} ry={1.4} fill="#fff" opacity={0.8} />
+        <SealMouth mood={mood} />
+        <SealFaceExtras mood={mood} />
+      </g>
+    </>
+  );
 }
 
 function Sparkle({ x, y, size, color, delay }: { x: number; y: number; size: number; color: string; delay: string }) {
@@ -124,25 +209,6 @@ function Heart({ x, y, size, color }: { x: number; y: number; size: number; colo
       <path className="animate-twinkle" d="M0 3 C0 -2 -7 -3 -7 2 C-7 6 0 9 0 11 C0 9 7 6 7 2 C7 -3 0 -2 0 3 Z" fill={color} />
     </g>
   );
-}
-
-// Tears and sweat sit on the face, so they move with it.
-function FaceExtras({ mood }: { mood: Mood }) {
-  if (mood === "mixed" || mood === "poor") {
-    return <path d="M150 92 Q158 106 150 112 Q142 106 150 92 Z" fill="#9fe6f5" stroke="#1fc8e3" strokeWidth={2} />;
-  }
-  if (mood === "veryPoor") {
-    return <path d="M70 138 Q76 150 70 156 Q64 150 70 138 Z" fill="#9fe6f5" stroke="#1fc8e3" strokeWidth={2} />;
-  }
-  if (mood === "miserable") {
-    return (
-      <g stroke="#9fe6f5" strokeWidth={7} strokeLinecap="round" fill="none">
-        <path d="M66 128 Q60 146 62 160" />
-        <path d="M134 128 Q140 146 138 160" />
-      </g>
-    );
-  }
-  return null;
 }
 
 function Extras({ mood }: { mood: Mood }) {
@@ -169,232 +235,7 @@ function Extras({ mood }: { mood: Mood }) {
   return <>{items}</>;
 }
 
-// Three feathery gill fronds on one side of the head; mirrored for the other side.
-function Gills({ side }: { side: "left" | "right" }) {
-  const fronds = [
-    { x: 48, y: 62, angle: -50 },
-    { x: 36, y: 92, angle: -5 },
-    { x: 46, y: 122, angle: 40 }
-  ];
-  return (
-    <g transform={side === "right" ? "translate(200 0) scale(-1 1)" : undefined}>
-      {fronds.map(({ x, y, angle }, index) => (
-        <g key={index} transform={`translate(${x} ${y}) rotate(${angle})`}>
-          <g className="animate-wiggle" style={{ animationDelay: `${index * 0.3}s` }}>
-            <path d="M14 0 L-22 0" stroke="#e8357f" strokeWidth={6} strokeLinecap="round" />
-            {[-20, -10].map((cx) => (
-              <g key={cx}>
-                <ellipse cx={cx} cy={-6} rx={4} ry={6} fill="#ff4f9a" stroke="#2b2350" strokeWidth={2} transform={`rotate(-20 ${cx} -6)`} />
-                <ellipse cx={cx} cy={6} rx={4} ry={6} fill="#ff4f9a" stroke="#2b2350" strokeWidth={2} transform={`rotate(20 ${cx} 6)`} />
-              </g>
-            ))}
-            <circle cx={-27} cy={0} r={5.5} fill="#ff4f9a" stroke="#2b2350" strokeWidth={2} />
-          </g>
-        </g>
-      ))}
-    </g>
-  );
-}
-
-function CuteAxolotl({ mood }: { mood: Mood }) {
-  return (
-    <>
-      <defs>
-        <linearGradient id="axolotlSkin" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#d4f4ff" />
-          <stop offset="100%" stopColor="#86d6ff" />
-        </linearGradient>
-      </defs>
-      <ellipse cx={100} cy={192} rx={52} ry={6} fill="#2b2350" opacity={0.1} />
-      <g className={mood === "sleeping" ? undefined : "animate-bob"}>
-        {/* Tail */}
-        <path
-          d="M128 168 Q160 176 184 150 Q176 182 132 184 Z"
-          fill="#a9e4ff"
-          stroke={INK}
-          strokeWidth={3.5}
-          strokeLinejoin="round"
-        />
-        {/* Body, belly and little arms */}
-        <ellipse cx={100} cy={162} rx={40} ry={26} fill="url(#axolotlSkin)" stroke={INK} strokeWidth={4} />
-        <ellipse cx={100} cy={168} rx={22} ry={14} fill="#effbff" />
-        <ellipse cx={68} cy={170} rx={9} ry={6} fill="#9fdfff" stroke={INK} strokeWidth={3} transform="rotate(-25 68 170)" />
-        <ellipse cx={132} cy={170} rx={9} ry={6} fill="#9fdfff" stroke={INK} strokeWidth={3} transform="rotate(25 132 170)" />
-        <Gills side="left" />
-        <Gills side="right" />
-        {/* Head */}
-        <ellipse cx={100} cy={96} rx={60} ry={50} fill="url(#axolotlSkin)" stroke={INK} strokeWidth={4} />
-        <path d="M66 62 Q76 54 90 52" stroke="#fff" strokeWidth={6} strokeLinecap="round" fill="none" opacity={0.7} />
-        {/* Flower clip */}
-        <g transform="translate(132 54)">
-          {[0, 72, 144, 216, 288].map((angle) => (
-            <ellipse key={angle} cx={0} cy={-8} rx={6} ry={8} fill="#ff8fb8" transform={`rotate(${angle})`} stroke={INK} strokeWidth={2} />
-          ))}
-          <circle r={5} fill="#ffc93c" stroke={INK} strokeWidth={2} />
-        </g>
-        <ellipse cx={58} cy={114} rx={11} ry={6.5} fill="#ff4f9a" opacity={0.5} />
-        <ellipse cx={142} cy={114} rx={11} ry={6.5} fill="#ff4f9a" opacity={0.5} />
-        <g transform="translate(0 -24)">
-          <Eyes mood={mood} />
-          <Mouth mood={mood} />
-          <FaceExtras mood={mood} />
-        </g>
-      </g>
-    </>
-  );
-}
-
-function RealFace({ mood }: { mood: Mood }) {
-  const line = { stroke: "#1d1838", strokeWidth: 3.5, strokeLinecap: "round" as const, fill: "none" };
-  const closedEyes = mood === "excellent" || mood === "sleeping" || mood === "miserable";
-  const eye = (cx: number) =>
-    closedEyes ? (
-      <path
-        key={cx}
-        d={
-          mood === "excellent"
-            ? `M${cx - 9} 94 Q${cx} 82 ${cx + 9} 94`
-            : mood === "sleeping"
-              ? `M${cx - 8} 90 Q${cx} 98 ${cx + 8} 90`
-              : `M${cx - 8} 85 L${cx + 6} 91 L${cx - 8} 97`
-        }
-        {...line}
-        transform={mood === "miserable" && cx > 100 ? `rotate(180 ${cx} 90)` : undefined}
-      />
-    ) : (
-      <g key={cx}>
-        <ellipse cx={cx} cy={91} rx={9} ry={11} fill="#1d1838" />
-        <ellipse cx={cx} cy={96} rx={6.5} ry={4.5} fill="#5b4bb7" opacity={0.75} />
-        <circle cx={cx - 3} cy={86.5} r={3.6} fill="#fff" />
-        <circle cx={cx + 3} cy={96} r={1.8} fill="#fff" />
-      </g>
-    );
-  const sadBrows = mood === "mixed" || mood === "poor" || mood === "veryPoor";
-  const mouths: Record<Mood, ReactNode> = {
-    excellent: (
-      <g>
-        <path d="M84 108 Q100 128 116 108 Z" fill="#d6457f" stroke="#1d1838" strokeWidth={2.5} strokeLinejoin="round" />
-        <path d="M91 117 Q100 124 109 117 Q100 113 91 117 Z" fill="#ff9cc2" />
-      </g>
-    ),
-    good: (
-      <g>
-        <path d="M86 109 Q100 124 114 109 Z" fill="#d6457f" stroke="#1d1838" strokeWidth={2.5} strokeLinejoin="round" />
-        <path d="M92 116 Q100 121 108 116 Q100 113 92 116 Z" fill="#ff9cc2" />
-      </g>
-    ),
-    okay: <path d="M86 111 Q93 118 100 112 Q107 118 114 111" {...line} />,
-    mixed: <path d="M86 115 q4.7 -4 9.3 0 t9.3 0 t9.3 0" {...line} />,
-    poor: <path d="M88 118 Q100 110 112 118" {...line} />,
-    veryPoor: <path d="M86 120 Q100 108 114 120" {...line} />,
-    miserable: <ellipse cx={100} cy={115} rx={8} ry={6.5} fill="#d6457f" stroke="#1d1838" strokeWidth={2.5} />,
-    sleeping: <ellipse cx={100} cy={114} rx={3.5} ry={3} fill="#d6457f" stroke="#1d1838" strokeWidth={2} />
-  };
-  return (
-    <g>
-      {eye(72)}
-      {eye(128)}
-      {sadBrows ? (
-        <g {...line} strokeWidth={2.5}>
-          <path d="M63 77 L79 72" />
-          <path d="M137 77 L121 72" />
-        </g>
-      ) : null}
-      {mouths[mood]}
-      {mood === "mixed" || mood === "poor" ? (
-        <path d="M150 70 Q157 82 150 87 Q143 82 150 70 Z" fill="#c4f1fb" stroke="#1fc8e3" strokeWidth={2} />
-      ) : null}
-      {mood === "veryPoor" ? <path d="M66 104 Q71 114 66 119 Q61 114 66 104 Z" fill="#c4f1fb" stroke="#1fc8e3" strokeWidth={2} /> : null}
-      {mood === "miserable" ? (
-        <g stroke="#c4f1fb" strokeWidth={5} strokeLinecap="round" fill="none">
-          <path d="M66 98 Q62 114 64 128" />
-          <path d="M134 98 Q138 114 136 128" />
-        </g>
-      ) : null}
-    </g>
-  );
-}
-
-function RealAxolotl({ mood }: { mood: Mood }) {
-  const OUTLINE = "#34507a";
-  return (
-    <>
-      <defs>
-        <linearGradient id="realSkin" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#dff2fc" />
-          <stop offset="100%" stopColor="#8fc4e6" />
-        </linearGradient>
-        <linearGradient id="realFin" x1="0" x2="1" y1="0" y2="0">
-          <stop offset="0%" stopColor="#cfe9f8" stopOpacity={0.9} />
-          <stop offset="100%" stopColor="#cfe9f8" stopOpacity={0.4} />
-        </linearGradient>
-      </defs>
-      <ellipse cx={108} cy={190} rx={64} ry={6} fill="#2b2350" opacity={0.1} />
-      <g className={mood === "sleeping" ? undefined : "animate-bob"}>
-        {/* Tail with see-through fin */}
-        <path d="M128 132 Q176 124 194 92 Q196 136 150 168 Z" fill="url(#realFin)" stroke={OUTLINE} strokeWidth={2} strokeLinejoin="round" />
-        <path d="M134 144 Q170 140 190 104 Q186 140 146 164 Z" fill="url(#realSkin)" stroke={OUTLINE} strokeWidth={2.5} strokeLinejoin="round" />
-        {/* Body */}
-        <ellipse cx={110} cy={154} rx={46} ry={27} fill="url(#realSkin)" stroke={OUTLINE} strokeWidth={2.5} />
-        <ellipse cx={104} cy={160} rx={28} ry={11} fill="#eef8fd" opacity={0.8} />
-        {/* Legs with little toes */}
-        {[
-          { x: 70, y: 168, angle: 20 },
-          { x: 120, y: 174, angle: -10 },
-          { x: 150, y: 166, angle: -30 }
-        ].map(({ x, y, angle }) => (
-          <g key={x} transform={`translate(${x} ${y}) rotate(${angle})`}>
-            <path d="M0 -10 Q-2 0 -1 6" stroke={OUTLINE} strokeWidth={14} strokeLinecap="round" fill="none" />
-            <path d="M0 -10 Q-2 0 -1 6" stroke="#b5dbf1" strokeWidth={10.5} strokeLinecap="round" fill="none" />
-            {[-7, -2.3, 2.4, 7].map((toe) => (
-              <circle key={toe} cx={toe - 1} cy={12} r={3} fill="#b5dbf1" stroke={OUTLINE} strokeWidth={1.5} />
-            ))}
-          </g>
-        ))}
-        {/* Broad, flat head */}
-        <path
-          d="M100 50 C140 50 158 70 158 96 C158 124 134 138 100 138 C66 138 42 124 42 96 C42 70 60 50 100 50 Z"
-          fill="url(#realSkin)"
-          stroke={OUTLINE}
-          strokeWidth={2.5}
-        />
-        <path d="M66 64 Q80 58 96 58" stroke="#fff" strokeWidth={5} strokeLinecap="round" fill="none" opacity={0.6} />
-        {/* Speckles */}
-        {[
-          [84, 70],
-          [118, 66],
-          [146, 84],
-          [52, 104],
-          [124, 144],
-          [96, 140],
-          [142, 152]
-        ].map(([cx, cy]) => (
-          <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={1.8} fill="#4d6f9c" opacity={0.35} />
-        ))}
-        {/* Flower clip */}
-        <g transform="translate(130 58) scale(0.85)">
-          {[0, 72, 144, 216, 288].map((angle) => (
-            <ellipse key={angle} cx={0} cy={-8} rx={6} ry={8} fill="#ff8fb8" transform={`rotate(${angle})`} stroke={OUTLINE} strokeWidth={2} />
-          ))}
-          <circle r={5} fill="#ffc93c" stroke={OUTLINE} strokeWidth={2} />
-        </g>
-        <ellipse cx={58} cy={110} rx={10} ry={6} fill="#ff7aa8" opacity={0.55} />
-        <ellipse cx={142} cy={110} rx={10} ry={6} fill="#ff7aa8" opacity={0.55} />
-        <RealFace mood={mood} />
-      </g>
-    </>
-  );
-}
-
-export function DawnFace({
-  score,
-  closed = false,
-  variant = "realistic"
-}: {
-  score: number;
-  closed?: boolean;
-  variant?: "cute" | "realistic";
-}) {
+export function DawnFace({ score, closed = false }: { score: number; closed?: boolean }) {
   const mood = pickMood(score, closed);
   const { label, tint } = MOODS[mood];
 
@@ -403,8 +244,8 @@ export function DawnFace({
       className="relative flex aspect-square w-full max-w-[320px] flex-col items-center justify-center overflow-hidden rounded-[32px] border-[3px] border-white sticker"
       style={{ background: `linear-gradient(160deg, ${tint[0]}, ${tint[1]})` }}
     >
-      <svg viewBox="0 0 200 200" role="img" aria-label={`Izzy the axolotl: ${label}`} className="h-[78%] w-[78%]">
-        {variant === "cute" ? <CuteAxolotl mood={mood} /> : <RealAxolotl mood={mood} />}
+      <svg viewBox="0 0 200 200" role="img" aria-label={`Izzy the seal: ${label}`} className="h-[78%] w-[78%]">
+        <Seal mood={mood} />
         <Extras mood={mood} />
       </svg>
       <p className="-mt-1 rounded-full bg-white/85 px-4 py-1 font-display text-lg font-semibold text-[var(--text)] sticker">{label}</p>
