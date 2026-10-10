@@ -14,8 +14,8 @@ import {
   Wind
 } from "lucide-react";
 import { AggregatedResponse, MetricConfidence, ScoreMode, ScoringWeights } from "@/lib/types";
-import { DEFAULT_WEIGHTS, explainBestTime, recommendationLabel, scoreTimeline } from "@/lib/scoring";
-import { average, confidenceLevel, formatSydneyDateTime, formatWindow, toOneDecimal, windDirectionLabel } from "@/lib/utils";
+import { DEFAULT_WEIGHTS, explainBestTime, findBestWindow, recommendationLabel, scoreTimeline } from "@/lib/scoring";
+import { average, confidenceLevel, formatSydneyDateTime, toOneDecimal, windDirectionLabel } from "@/lib/utils";
 import { ConfidencePill } from "@/components/confidence-pill";
 import { DawnFace } from "@/components/dawn-face";
 import { HourlyChart } from "@/components/hourly-chart";
@@ -28,6 +28,25 @@ function normalizeWeights(weights: ScoringWeights): ScoringWeights {
   return Object.fromEntries(
     Object.entries(weights).map(([key, value]) => [key, value / total])
   ) as ScoringWeights;
+}
+
+type StoredSettings = {
+  mode?: ScoreMode;
+  weights?: Partial<Record<ScoreMode, Partial<ScoringWeights>>>;
+};
+
+function readSettings(): StoredSettings {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as StoredSettings) : {};
+  } catch {
+    return {};
+  }
+}
+
+function savedWeightsFor(mode: ScoreMode, settings: StoredSettings): ScoringWeights {
+  const saved = settings.weights?.[mode];
+  return saved ? normalizeWeights({ ...DEFAULT_WEIGHTS[mode], ...saved }) : DEFAULT_WEIGHTS[mode];
 }
 
 function factorCard(
@@ -59,20 +78,7 @@ export function Dashboard() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [mode, setMode] = useState<ScoreMode>("balanced");
   const [weights, setWeights] = useState<ScoringWeights>(DEFAULT_WEIGHTS.balanced);
-
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as { mode?: ScoreMode; weights?: Partial<Record<ScoreMode, ScoringWeights>> };
-      if (parsed.mode) setMode(parsed.mode);
-      if (parsed.weights?.[parsed.mode ?? "balanced"]) {
-        setWeights(parsed.weights[parsed.mode ?? "balanced"] as ScoringWeights);
-      }
-    } catch {
-      // Ignore malformed local settings.
-    }
-  }, []);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   async function load(nextMode = mode) {
     setLoading(true);
@@ -83,22 +89,7 @@ export function Dashboard() {
         const payload = (await response.json()) as { error?: string };
         throw new Error(payload.error ?? "Failed to load conditions");
       }
-      const payload = (await response.json()) as AggregatedResponse;
-      setData(payload);
-      setMode(nextMode);
-      setWeights((current) => {
-        const saved = window.localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved) as { weights?: Partial<Record<ScoreMode, ScoringWeights>> };
-            const next = parsed.weights?.[nextMode];
-            if (next) return normalizeWeights(next);
-          } catch {
-            return current;
-          }
-        }
-        return payload.defaultWeights[nextMode];
-      });
+      setData((await response.json()) as AggregatedResponse);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Failed to load data");
     } finally {
@@ -106,21 +97,27 @@ export function Dashboard() {
     }
   }
 
+  // Restore saved settings before the first save, so the defaults never overwrite them.
   useEffect(() => {
-    void load(mode);
+    const settings = readSettings();
+    const initialMode: ScoreMode = settings.mode === "strict" ? "strict" : "balanced";
+    setMode(initialMode);
+    setWeights(savedWeightsFor(initialMode, settings));
+    setSettingsLoaded(true);
+    void load(initialMode);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
+    if (!settingsLoaded) return;
     try {
-      const existing = window.localStorage.getItem(STORAGE_KEY);
-      const parsed = existing ? (JSON.parse(existing) as { weights?: Partial<Record<ScoreMode, ScoringWeights>> }) : {};
+      const settings = readSettings();
       window.localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({
           mode,
           weights: {
-            ...(parsed.weights ?? {}),
+            ...(settings.weights ?? {}),
             [mode]: weights
           }
         })
@@ -128,21 +125,18 @@ export function Dashboard() {
     } catch {
       // localStorage unavailable
     }
-  }, [mode, weights]);
+  }, [settingsLoaded, mode, weights]);
 
   const derived = useMemo(() => {
     if (!data) return null;
     const normalizedWeights = normalizeWeights(weights);
     const scored = scoreTimeline(data.timeline, normalizedWeights);
-    const current = scored.find((hour) => hour.isoTime === data.current.isoTime) ?? scored[0];
-    const currentIndex = scored.findIndex((hour) => hour.isoTime === current.isoTime);
-    const remaining = scored.slice(currentIndex);
-    const best = remaining.reduce((candidate, hour) => (hour.score > candidate.score ? hour : candidate), remaining[0]);
-    const bestIndex = remaining.findIndex((hour) => hour.isoTime === best.isoTime);
+    const { current, best, bestWindow } = findBestWindow(scored, data.current.isoTime);
     return {
+      scored,
       current,
       best,
-      bestWindow: formatWindow(best.isoTime, remaining[Math.min(remaining.length - 1, bestIndex + 1)].isoTime),
+      bestWindow,
       recommendation: recommendationLabel(current.score),
       bestReason: explainBestTime(current, best),
       currentConfidence: {
@@ -172,7 +166,7 @@ export function Dashboard() {
         <div className="card card-strong rounded-[32px] px-8 py-10 text-center">
           <p className="text-sm uppercase tracking-[0.28em] text-[var(--muted)]">Fraser Facts</p>
           <h1 className="mt-3 font-[var(--font-display)] text-4xl">Loading live swim conditions</h1>
-          <p className="mt-4 text-[var(--muted)]">Fetching Beachwatch, weather, marine, tide, and local schedule data.</p>
+          <p className="mt-4 text-[var(--muted)]">Fetching Beachwatch, weather, marine, tide, and water polo data.</p>
         </div>
       </main>
     );
@@ -218,8 +212,8 @@ export function Dashboard() {
           <p className="text-xs uppercase tracking-[0.36em] text-[var(--muted)]">Balmain swim dashboard</p>
           <h1 className="mt-2 font-[var(--font-display)] text-5xl leading-none md:text-6xl">Fraser Facts</h1>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--muted)]">
-            Live local-only advice for Dawn Fraser Baths using Beachwatch water-quality context, weather, tides, marine
-            temperature, rainfall drag, direct sun heuristics, and a local water polo schedule.
+            Live advice for Dawn Fraser Baths using Beachwatch water-quality context, weather, tides, marine
+            temperature, rainfall drag, direct sun heuristics, and the Balmain Water Polo calendar.
           </p>
         </div>
         <div className="relative flex items-center gap-3 self-start">
@@ -237,6 +231,7 @@ export function Dashboard() {
             mode={mode}
             onModeChange={(nextMode) => {
               setMode(nextMode);
+              setWeights(savedWeightsFor(nextMode, readSettings()));
               void load(nextMode);
             }}
             weights={weights}
@@ -287,7 +282,7 @@ export function Dashboard() {
                 <div className="rounded-[24px] border border-[var(--line)] bg-white/60 p-4">
                   <p className="text-sm uppercase tracking-[0.22em] text-[var(--muted)]">Best time today</p>
                   <p className="mt-2 text-4xl font-semibold">{best.score.toFixed(1)} / 10</p>
-                  <p className="mt-2 text-sm font-semibold text-[var(--accent)]">{data.bestWindow}</p>
+                  <p className="mt-2 text-sm font-semibold text-[var(--accent)]">{derived.bestWindow}</p>
                   <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{derived.bestReason}</p>
                 </div>
                 <div className="rounded-[24px] border border-[var(--line)] bg-white/60 p-4">
@@ -319,7 +314,7 @@ export function Dashboard() {
             <HourlyChart timeline={data.timeline} weights={weights} mode={mode} />
           </div>
           <div className="mt-4 grid gap-3">
-            {scoreTimeline(data.timeline, weights)
+            {derived.scored
               .filter((hour) => new Date(hour.isoTime) >= new Date(current.isoTime))
               .slice(0, 5)
               .map((hour) => (
@@ -444,7 +439,7 @@ export function Dashboard() {
             ))}
           </ul>
           <div className="mt-6 rounded-[24px] border border-amber-200 bg-amber-50/90 p-4 text-sm leading-6 text-amber-900">
-            Advisory only. This dashboard is a local decision aid, not a health or safety guarantee. Always use your
+            Advisory only. This dashboard is a decision aid, not a health or safety guarantee. Always use your
             judgment and official site notices before swimming.
           </div>
         </article>

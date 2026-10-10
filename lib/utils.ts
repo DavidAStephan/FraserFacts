@@ -35,6 +35,52 @@ export function confidenceTone(level: ConfidenceLevel) {
   );
 }
 
+const SYDNEY_PARTS_FORMAT = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Australia/Sydney",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23"
+});
+
+// Calendar fields of an instant as seen on a Sydney wall clock, independent of the host timezone.
+export function sydneyParts(date: Date) {
+  const parts = Object.fromEntries(SYDNEY_PARTS_FORMAT.formatToParts(date).map((part) => [part.type, part.value]));
+  const year = Number(parts.year);
+  const month = Number(parts.month);
+  const day = Number(parts.day);
+  return {
+    year,
+    month,
+    day,
+    hour: Number(parts.hour) % 24,
+    minute: Number(parts.minute),
+    weekday: new Date(Date.UTC(year, month - 1, day)).getUTCDay(),
+    dateKey: `${parts.year}-${parts.month}-${parts.day}`
+  };
+}
+
+export function sydneyDateKey(date: Date) {
+  return sydneyParts(date).dateKey;
+}
+
+// Converts a Sydney wall-clock string such as "2026-10-10T07:00" to the real instant.
+// `new Date("2026-10-10T07:00")` would instead use the server's timezone (UTC on most hosts).
+export function sydneyWallTimeToDate(localIso: string) {
+  const [datePart, timePart = "00:00"] = localIso.split("T");
+  const [year, month, day] = datePart.split("-").map(Number);
+  const [hour, minute] = timePart.split(":").map(Number);
+  const target = Date.UTC(year, month - 1, day, hour, minute);
+  let guess = target;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const shown = sydneyParts(new Date(guess));
+    guess += target - Date.UTC(shown.year, shown.month - 1, shown.day, shown.hour, shown.minute);
+  }
+  return new Date(guess);
+}
+
 export function formatSydneyTime(iso: string, options?: Intl.DateTimeFormatOptions) {
   return new Intl.DateTimeFormat("en-AU", {
     timeZone: "Australia/Sydney",

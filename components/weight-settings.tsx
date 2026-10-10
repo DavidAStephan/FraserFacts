@@ -88,7 +88,7 @@ export function WeightSettings({
             ))}
           </div>
           <p className="mt-4 text-xs leading-5 text-[var(--muted)]">
-            These changes stay in your browser via localStorage. They only affect your local dashboard.
+            These changes are saved in this browser only and don't affect anyone else's view.
           </p>
         </div>
       ) : null}

@@ -17,8 +17,9 @@ Next.js + React + TypeScript is the best fit here because it gives you:
 - Open-Meteo marine API for sea surface temperature near the baths
 - WillyWeather Balmain East tides page as the default tide fallback, with interpolation between listed high and low tides
 - Optional WorldTides API if you set `WORLDTIDES_API_KEY` in `.env.local`
-- Balmain Water Polo calendar as the primary water polo source
-- Local JSON fallback for water polo in [`data/water-polo-schedule.json`](./data/water-polo-schedule.json) when the live site blocks automated fetches
+- Inner West Council opening-hours page for the seasonal hours
+- Balmain Water Polo calendar feed as the primary water polo source
+- Bundled fallback schedule for water polo in [`data/water-polo-schedule.json`](./data/water-polo-schedule.json) when the live calendar can't be reached
 - Local Dawn Fraser portrait image sourced from Wikimedia Commons and bundled at [`public/dawn-fraser.jpg`](./public/dawn-fraser.jpg)
 
 ## Assumptions where exact live data is unavailable
@@ -26,7 +27,9 @@ Next.js + React + TypeScript is the best fit here because it gives you:
 - Sunlight on the baths is a heuristic based on sun position plus a practical west/north-west afternoon-sun assumption.
 - Water temperature is a nearby marine-grid estimate, not an in-baths sensor.
 - Tide height is approximate when the app is using the WillyWeather daily-event fallback instead of WorldTides.
-- Water polo now tries the Balmain Water Polo calendar first. If the site returns a CloudFront/WAF challenge to automated fetches, the app falls back to the local JSON schedule and lowers confidence.
+- Water polo reads the Balmain Water Polo calendar feed. The feed has no venue field, so every club event is treated as using Dawn Fraser Baths. If the feed is unreachable, the app uses the bundled schedule and lowers confidence.
+- A Beachwatch "Pollution likely" (red) forecast is treated as a closure, matching the Inner West Council notice.
+- All times are calculated in Sydney time regardless of the server's timezone, so the app behaves the same locally and on a UTC cloud host.
 - Missing sources lower confidence and surface `Unknown`; the app does not fabricate missing metrics.
 
 ## Setup
@@ -46,7 +49,7 @@ copy .env.example .env.local
 3. Optional improvements:
 
 - Add `WORLDTIDES_API_KEY` to `.env.local` for a better tide source.
-- Edit [`data/water-polo-schedule.json`](./data/water-polo-schedule.json) to match the schedule you care about.
+- Edit [`data/water-polo-schedule.json`](./data/water-polo-schedule.json) each term so the fallback matches the club calendar.
 
 4. Run locally:
 
@@ -82,12 +85,21 @@ There are two built-in modes:
 
 The settings drawer stores your local weight tweaks in browser `localStorage`.
 
-## Local-only notes
+## Deployment
+
+The app is a standard Next.js project with no database, so it runs on Vercel's free Hobby plan:
+
+1. Sign in at [vercel.com](https://vercel.com) with GitHub.
+2. Choose **Add New → Project**, import this repository, and click **Deploy** (no settings need changing).
+3. Optionally add `WORLDTIDES_API_KEY` under **Settings → Environment Variables**.
+
+Every push to `main` redeploys automatically.
+
+## Notes
 
 - No auth
-- No deployment setup
-- Secrets belong in `.env.local`
-- Server-side fetches are cached briefly in memory
+- Secrets belong in `.env.local` locally, or in the host's environment variables
+- Server-side fetches are cached for about 10 minutes
 
 ## Advisory
 

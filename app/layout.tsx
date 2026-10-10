@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Fraser Facts",
-  description: "Local-only dashboard for deciding whether to swim at Dawn Fraser Baths."
+  description: "Live dashboard for deciding whether to swim at Dawn Fraser Baths in Balmain, Sydney."
 };
 
 export default function RootLayout({

@@ -1,5 +1,5 @@
 import { ScoreMode, ScoredHour, ScoringWeights, HourlyCondition } from "@/lib/types";
-import { average, clamp } from "@/lib/utils";
+import { average, clamp, formatWindow } from "@/lib/utils";
 
 export const DEFAULT_WEIGHTS: Record<ScoreMode, ScoringWeights> = {
   strict: {
@@ -158,6 +158,18 @@ function buildScoreSummary(
 
 export function scoreTimeline(timeline: HourlyCondition[], weights: ScoringWeights) {
   return timeline.map((hour) => scoreHour(hour, weights));
+}
+
+export function findBestWindow(scored: ScoredHour[], currentIsoTime?: string) {
+  const current = scored.find((hour) => hour.isoTime === currentIsoTime) ?? scored.find((hour) => hour.isNow) ?? scored[0];
+  const remaining = scored.slice(scored.indexOf(current));
+  const best = remaining.reduce((candidate, hour) => (hour.score > candidate.score ? hour : candidate), remaining[0]);
+  const bestEnd = new Date(new Date(best.isoTime).getTime() + 60 * 60 * 1000).toISOString();
+  return {
+    current,
+    best,
+    bestWindow: best.isBathsOpen ? formatWindow(best.isoTime, bestEnd) : "No open window today"
+  };
 }
 
 export function recommendationLabel(score: number) {
