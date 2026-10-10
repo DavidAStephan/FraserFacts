@@ -196,7 +196,205 @@ function Gills({ side }: { side: "left" | "right" }) {
   );
 }
 
-export function DawnFace({ score, closed = false }: { score: number; closed?: boolean }) {
+function CuteAxolotl({ mood }: { mood: Mood }) {
+  return (
+    <>
+      <defs>
+        <linearGradient id="axolotlSkin" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="#d4f4ff" />
+          <stop offset="100%" stopColor="#86d6ff" />
+        </linearGradient>
+      </defs>
+      <ellipse cx={100} cy={192} rx={52} ry={6} fill="#2b2350" opacity={0.1} />
+      <g className={mood === "sleeping" ? undefined : "animate-bob"}>
+        {/* Tail */}
+        <path
+          d="M128 168 Q160 176 184 150 Q176 182 132 184 Z"
+          fill="#a9e4ff"
+          stroke={INK}
+          strokeWidth={3.5}
+          strokeLinejoin="round"
+        />
+        {/* Body, belly and little arms */}
+        <ellipse cx={100} cy={162} rx={40} ry={26} fill="url(#axolotlSkin)" stroke={INK} strokeWidth={4} />
+        <ellipse cx={100} cy={168} rx={22} ry={14} fill="#effbff" />
+        <ellipse cx={68} cy={170} rx={9} ry={6} fill="#9fdfff" stroke={INK} strokeWidth={3} transform="rotate(-25 68 170)" />
+        <ellipse cx={132} cy={170} rx={9} ry={6} fill="#9fdfff" stroke={INK} strokeWidth={3} transform="rotate(25 132 170)" />
+        <Gills side="left" />
+        <Gills side="right" />
+        {/* Head */}
+        <ellipse cx={100} cy={96} rx={60} ry={50} fill="url(#axolotlSkin)" stroke={INK} strokeWidth={4} />
+        <path d="M66 62 Q76 54 90 52" stroke="#fff" strokeWidth={6} strokeLinecap="round" fill="none" opacity={0.7} />
+        {/* Flower clip */}
+        <g transform="translate(132 54)">
+          {[0, 72, 144, 216, 288].map((angle) => (
+            <ellipse key={angle} cx={0} cy={-8} rx={6} ry={8} fill="#ff8fb8" transform={`rotate(${angle})`} stroke={INK} strokeWidth={2} />
+          ))}
+          <circle r={5} fill="#ffc93c" stroke={INK} strokeWidth={2} />
+        </g>
+        <ellipse cx={58} cy={114} rx={11} ry={6.5} fill="#ff4f9a" opacity={0.5} />
+        <ellipse cx={142} cy={114} rx={11} ry={6.5} fill="#ff4f9a" opacity={0.5} />
+        <g transform="translate(0 -24)">
+          <Eyes mood={mood} />
+          <Mouth mood={mood} />
+          <FaceExtras mood={mood} />
+        </g>
+      </g>
+    </>
+  );
+}
+
+function RealFace({ mood }: { mood: Mood }) {
+  const line = { stroke: "#1d1838", strokeWidth: 3.5, strokeLinecap: "round" as const, fill: "none" };
+  const closedEyes = mood === "excellent" || mood === "sleeping" || mood === "miserable";
+  const eye = (cx: number) =>
+    closedEyes ? (
+      <path
+        key={cx}
+        d={
+          mood === "excellent"
+            ? `M${cx - 9} 94 Q${cx} 82 ${cx + 9} 94`
+            : mood === "sleeping"
+              ? `M${cx - 8} 90 Q${cx} 98 ${cx + 8} 90`
+              : `M${cx - 8} 85 L${cx + 6} 91 L${cx - 8} 97`
+        }
+        {...line}
+        transform={mood === "miserable" && cx > 100 ? `rotate(180 ${cx} 90)` : undefined}
+      />
+    ) : (
+      <g key={cx}>
+        <ellipse cx={cx} cy={91} rx={9} ry={11} fill="#1d1838" />
+        <ellipse cx={cx} cy={96} rx={6.5} ry={4.5} fill="#5b4bb7" opacity={0.75} />
+        <circle cx={cx - 3} cy={86.5} r={3.6} fill="#fff" />
+        <circle cx={cx + 3} cy={96} r={1.8} fill="#fff" />
+      </g>
+    );
+  const sadBrows = mood === "mixed" || mood === "poor" || mood === "veryPoor";
+  const mouths: Record<Mood, ReactNode> = {
+    excellent: (
+      <g>
+        <path d="M84 108 Q100 128 116 108 Z" fill="#d6457f" stroke="#1d1838" strokeWidth={2.5} strokeLinejoin="round" />
+        <path d="M91 117 Q100 124 109 117 Q100 113 91 117 Z" fill="#ff9cc2" />
+      </g>
+    ),
+    good: (
+      <g>
+        <path d="M86 109 Q100 124 114 109 Z" fill="#d6457f" stroke="#1d1838" strokeWidth={2.5} strokeLinejoin="round" />
+        <path d="M92 116 Q100 121 108 116 Q100 113 92 116 Z" fill="#ff9cc2" />
+      </g>
+    ),
+    okay: <path d="M86 111 Q93 118 100 112 Q107 118 114 111" {...line} />,
+    mixed: <path d="M86 115 q4.7 -4 9.3 0 t9.3 0 t9.3 0" {...line} />,
+    poor: <path d="M88 118 Q100 110 112 118" {...line} />,
+    veryPoor: <path d="M86 120 Q100 108 114 120" {...line} />,
+    miserable: <ellipse cx={100} cy={115} rx={8} ry={6.5} fill="#d6457f" stroke="#1d1838" strokeWidth={2.5} />,
+    sleeping: <ellipse cx={100} cy={114} rx={3.5} ry={3} fill="#d6457f" stroke="#1d1838" strokeWidth={2} />
+  };
+  return (
+    <g>
+      {eye(72)}
+      {eye(128)}
+      {sadBrows ? (
+        <g {...line} strokeWidth={2.5}>
+          <path d="M63 77 L79 72" />
+          <path d="M137 77 L121 72" />
+        </g>
+      ) : null}
+      {mouths[mood]}
+      {mood === "mixed" || mood === "poor" ? (
+        <path d="M150 70 Q157 82 150 87 Q143 82 150 70 Z" fill="#c4f1fb" stroke="#1fc8e3" strokeWidth={2} />
+      ) : null}
+      {mood === "veryPoor" ? <path d="M66 104 Q71 114 66 119 Q61 114 66 104 Z" fill="#c4f1fb" stroke="#1fc8e3" strokeWidth={2} /> : null}
+      {mood === "miserable" ? (
+        <g stroke="#c4f1fb" strokeWidth={5} strokeLinecap="round" fill="none">
+          <path d="M66 98 Q62 114 64 128" />
+          <path d="M134 98 Q138 114 136 128" />
+        </g>
+      ) : null}
+    </g>
+  );
+}
+
+function RealAxolotl({ mood }: { mood: Mood }) {
+  const OUTLINE = "#34507a";
+  return (
+    <>
+      <defs>
+        <linearGradient id="realSkin" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="#dff2fc" />
+          <stop offset="100%" stopColor="#8fc4e6" />
+        </linearGradient>
+        <linearGradient id="realFin" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0%" stopColor="#cfe9f8" stopOpacity={0.9} />
+          <stop offset="100%" stopColor="#cfe9f8" stopOpacity={0.4} />
+        </linearGradient>
+      </defs>
+      <ellipse cx={108} cy={190} rx={64} ry={6} fill="#2b2350" opacity={0.1} />
+      <g className={mood === "sleeping" ? undefined : "animate-bob"}>
+        {/* Tail with see-through fin */}
+        <path d="M128 132 Q176 124 194 92 Q196 136 150 168 Z" fill="url(#realFin)" stroke={OUTLINE} strokeWidth={2} strokeLinejoin="round" />
+        <path d="M134 144 Q170 140 190 104 Q186 140 146 164 Z" fill="url(#realSkin)" stroke={OUTLINE} strokeWidth={2.5} strokeLinejoin="round" />
+        {/* Body */}
+        <ellipse cx={110} cy={154} rx={46} ry={27} fill="url(#realSkin)" stroke={OUTLINE} strokeWidth={2.5} />
+        <ellipse cx={104} cy={160} rx={28} ry={11} fill="#eef8fd" opacity={0.8} />
+        {/* Legs with little toes */}
+        {[
+          { x: 70, y: 168, angle: 20 },
+          { x: 120, y: 174, angle: -10 },
+          { x: 150, y: 166, angle: -30 }
+        ].map(({ x, y, angle }) => (
+          <g key={x} transform={`translate(${x} ${y}) rotate(${angle})`}>
+            <path d="M0 -10 Q-2 0 -1 6" stroke={OUTLINE} strokeWidth={14} strokeLinecap="round" fill="none" />
+            <path d="M0 -10 Q-2 0 -1 6" stroke="#b5dbf1" strokeWidth={10.5} strokeLinecap="round" fill="none" />
+            {[-7, -2.3, 2.4, 7].map((toe) => (
+              <circle key={toe} cx={toe - 1} cy={12} r={3} fill="#b5dbf1" stroke={OUTLINE} strokeWidth={1.5} />
+            ))}
+          </g>
+        ))}
+        {/* Broad, flat head */}
+        <path
+          d="M100 50 C140 50 158 70 158 96 C158 124 134 138 100 138 C66 138 42 124 42 96 C42 70 60 50 100 50 Z"
+          fill="url(#realSkin)"
+          stroke={OUTLINE}
+          strokeWidth={2.5}
+        />
+        <path d="M66 64 Q80 58 96 58" stroke="#fff" strokeWidth={5} strokeLinecap="round" fill="none" opacity={0.6} />
+        {/* Speckles */}
+        {[
+          [84, 70],
+          [118, 66],
+          [146, 84],
+          [52, 104],
+          [124, 144],
+          [96, 140],
+          [142, 152]
+        ].map(([cx, cy]) => (
+          <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={1.8} fill="#4d6f9c" opacity={0.35} />
+        ))}
+        {/* Flower clip */}
+        <g transform="translate(130 58) scale(0.85)">
+          {[0, 72, 144, 216, 288].map((angle) => (
+            <ellipse key={angle} cx={0} cy={-8} rx={6} ry={8} fill="#ff8fb8" transform={`rotate(${angle})`} stroke={OUTLINE} strokeWidth={2} />
+          ))}
+          <circle r={5} fill="#ffc93c" stroke={OUTLINE} strokeWidth={2} />
+        </g>
+        <ellipse cx={58} cy={110} rx={10} ry={6} fill="#ff7aa8" opacity={0.55} />
+        <ellipse cx={142} cy={110} rx={10} ry={6} fill="#ff7aa8" opacity={0.55} />
+        <RealFace mood={mood} />
+      </g>
+    </>
+  );
+}
+
+export function DawnFace({
+  score,
+  closed = false,
+  variant = "realistic"
+}: {
+  score: number;
+  closed?: boolean;
+  variant?: "cute" | "realistic";
+}) {
   const mood = pickMood(score, closed);
   const { label, tint } = MOODS[mood];
 
@@ -206,47 +404,7 @@ export function DawnFace({ score, closed = false }: { score: number; closed?: bo
       style={{ background: `linear-gradient(160deg, ${tint[0]}, ${tint[1]})` }}
     >
       <svg viewBox="0 0 200 200" role="img" aria-label={`Izzy the axolotl: ${label}`} className="h-[78%] w-[78%]">
-        <defs>
-          <linearGradient id="axolotlSkin" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#d4f4ff" />
-            <stop offset="100%" stopColor="#86d6ff" />
-          </linearGradient>
-        </defs>
-        <ellipse cx={100} cy={192} rx={52} ry={6} fill="#2b2350" opacity={0.1} />
-        <g className={mood === "sleeping" ? undefined : "animate-bob"}>
-          {/* Tail */}
-          <path
-            d="M128 168 Q160 176 184 150 Q176 182 132 184 Z"
-            fill="#a9e4ff"
-            stroke={INK}
-            strokeWidth={3.5}
-            strokeLinejoin="round"
-          />
-          {/* Body, belly and little arms */}
-          <ellipse cx={100} cy={162} rx={40} ry={26} fill="url(#axolotlSkin)" stroke={INK} strokeWidth={4} />
-          <ellipse cx={100} cy={168} rx={22} ry={14} fill="#effbff" />
-          <ellipse cx={68} cy={170} rx={9} ry={6} fill="#9fdfff" stroke={INK} strokeWidth={3} transform="rotate(-25 68 170)" />
-          <ellipse cx={132} cy={170} rx={9} ry={6} fill="#9fdfff" stroke={INK} strokeWidth={3} transform="rotate(25 132 170)" />
-          <Gills side="left" />
-          <Gills side="right" />
-          {/* Head */}
-          <ellipse cx={100} cy={96} rx={60} ry={50} fill="url(#axolotlSkin)" stroke={INK} strokeWidth={4} />
-          <path d="M66 62 Q76 54 90 52" stroke="#fff" strokeWidth={6} strokeLinecap="round" fill="none" opacity={0.7} />
-          {/* Flower clip */}
-          <g transform="translate(132 54)">
-            {[0, 72, 144, 216, 288].map((angle) => (
-              <ellipse key={angle} cx={0} cy={-8} rx={6} ry={8} fill="#ff8fb8" transform={`rotate(${angle})`} stroke={INK} strokeWidth={2} />
-            ))}
-            <circle r={5} fill="#ffc93c" stroke={INK} strokeWidth={2} />
-          </g>
-          <ellipse cx={58} cy={114} rx={11} ry={6.5} fill="#ff4f9a" opacity={0.5} />
-          <ellipse cx={142} cy={114} rx={11} ry={6.5} fill="#ff4f9a" opacity={0.5} />
-          <g transform="translate(0 -24)">
-            <Eyes mood={mood} />
-            <Mouth mood={mood} />
-            <FaceExtras mood={mood} />
-          </g>
-        </g>
+        {variant === "cute" ? <CuteAxolotl mood={mood} /> : <RealAxolotl mood={mood} />}
         <Extras mood={mood} />
       </svg>
       <p className="-mt-1 rounded-full bg-white/85 px-4 py-1 font-display text-lg font-semibold text-[var(--text)] sticker">{label}</p>
