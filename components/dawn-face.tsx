@@ -62,31 +62,26 @@ function SealEyes({ mood }: { mood: Mood }) {
   );
 }
 
+// The mouth hangs from the nose: a short line down, then curves out to each side.
 function SealMouth({ mood }: { mood: Mood }) {
-  const line = { stroke: INK, strokeWidth: 3, strokeLinecap: "round" as const, fill: "none" };
-  switch (mood) {
-    case "excellent":
-      return (
-        <g>
-          <path d="M90 127 Q100 145 110 127 Z" fill="#d6457f" stroke={INK} strokeWidth={2.5} strokeLinejoin="round" />
-          <path d="M94 134 Q100 140 106 134 Q100 131 94 134 Z" fill="#ff9cc2" />
-        </g>
-      );
-    case "good":
-      return <path d="M92 127 Q100 139 108 127 Z" fill="#d6457f" stroke={INK} strokeWidth={2.5} strokeLinejoin="round" />;
-    case "okay":
-      return <path d="M94 129 Q100 133 106 129" {...line} />;
-    case "mixed":
-      return <path d="M92 131 q4 -3 8 0 t8 0" {...line} />;
-    case "poor":
-      return <path d="M93 134 Q100 128 107 134" {...line} />;
-    case "veryPoor":
-      return <path d="M91 136 Q100 126 109 136" {...line} />;
-    case "miserable":
-      return <ellipse cx={100} cy={133} rx={7} ry={6} fill="#d6457f" stroke={INK} strokeWidth={2.5} />;
-    case "sleeping":
-      return <ellipse cx={100} cy={131} rx={3} ry={2.6} fill="#d6457f" stroke={INK} strokeWidth={2} />;
-  }
+  const line = { stroke: INK, strokeWidth: 2.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, fill: "none" };
+  const curves: Record<Mood, string> = {
+    excellent: "M86 119 Q93 131 100 122 Q107 131 114 119",
+    good: "M88 120 Q94 129 100 122 Q106 129 112 120",
+    okay: "M91 122 Q95.5 127 100 122 Q104.5 127 109 122",
+    mixed: "M90 125 L100 122 L110 125",
+    poor: "M90 128 Q95 121 100 122 Q105 121 110 128",
+    veryPoor: "M88 130 Q94 119 100 122 Q106 119 112 130",
+    miserable: "M87 131 Q94 118 100 122 Q106 118 113 131",
+    sleeping: "M93 123 Q96.5 126 100 122 Q103.5 126 107 123"
+  };
+  return (
+    <g>
+      <path d="M100 113 L100 122" {...line} />
+      <path d={curves[mood]} {...line} />
+      {mood === "excellent" ? <path d="M96 125 Q100 133 104 125 Z" fill="#ff8fb8" stroke={INK} strokeWidth={2} strokeLinejoin="round" /> : null}
+    </g>
+  );
 }
 
 // Tears and sweat sit on the face.
