@@ -49,23 +49,41 @@ function savedWeightsFor(mode: ScoreMode, settings: StoredSettings): ScoringWeig
   return saved ? normalizeWeights({ ...DEFAULT_WEIGHTS[mode], ...saved }) : DEFAULT_WEIGHTS[mode];
 }
 
+const TONES = {
+  pink: { soft: "#ffe1ef", strong: "#e8357f", border: "#ffc4de" },
+  aqua: { soft: "#d9f6fc", strong: "#0b9bb5", border: "#a8e8f5" },
+  sunny: { soft: "#fff3c7", strong: "#c98a00", border: "#ffe08a" },
+  lavender: { soft: "#ece6ff", strong: "#7457e8", border: "#d4c7ff" },
+  mint: { soft: "#dcf9ec", strong: "#109865", border: "#a9eccd" },
+  coral: { soft: "#ffe6dc", strong: "#e2603a", border: "#ffc6b0" }
+} as const;
+
+type Tone = keyof typeof TONES;
+
 function factorCard(
   title: string,
   value: string,
   subtitle: string,
   confidence: MetricConfidence,
-  icon: ReactNode
+  icon: ReactNode,
+  tone: Tone
 ) {
+  const colors = TONES[tone];
   return (
-    <article className="card rounded-[28px] p-5">
+    <article className="card rounded-[28px] p-5" style={{ borderColor: colors.border }}>
       <div className="mb-5 flex items-start justify-between gap-4">
-        <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-[var(--accent)]">
+        <div
+          className="inline-flex h-12 w-12 shrink-0 -rotate-6 items-center justify-center rounded-2xl sticker"
+          style={{ background: colors.soft, color: colors.strong }}
+        >
           {icon}
         </div>
         <ConfidencePill confidence={confidence} />
       </div>
-      <p className="text-sm uppercase tracking-[0.22em] text-[var(--muted)]">{title}</p>
-      <p className="mt-2 text-2xl font-semibold text-[var(--text)]">{value}</p>
+      <p className="text-sm font-extrabold uppercase tracking-[0.18em]" style={{ color: colors.strong }}>
+        {title}
+      </p>
+      <p className="mt-2 font-display text-2xl font-semibold text-[var(--text)]">{value}</p>
       <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{subtitle}</p>
     </article>
   );
@@ -165,7 +183,7 @@ export function Dashboard() {
       <main className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-6 py-20">
         <div className="card card-strong rounded-[32px] px-8 py-10 text-center">
           <p className="text-sm uppercase tracking-[0.28em] text-[var(--muted)]">Fraser Facts</p>
-          <h1 className="mt-3 font-[var(--font-display)] text-4xl">Loading live swim conditions</h1>
+          <h1 className="mt-3 font-display text-4xl">Loading live swim conditions</h1>
           <p className="mt-4 text-[var(--muted)]">Fetching Beachwatch, weather, marine, tide, and water polo data.</p>
         </div>
       </main>
@@ -179,7 +197,7 @@ export function Dashboard() {
           <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-rose-700">
             <AlertTriangle className="h-6 w-6" />
           </div>
-          <h1 className="mt-4 font-[var(--font-display)] text-4xl">Fraser Facts couldn&apos;t load conditions</h1>
+          <h1 className="mt-4 font-display text-4xl">Fraser Facts couldn&apos;t load conditions</h1>
           <p className="mt-3 text-[var(--muted)]">{error}</p>
           <button
             type="button"
@@ -209,8 +227,8 @@ export function Dashboard() {
     <main className="mx-auto max-w-7xl px-5 py-6 md:px-8 md:py-8">
       <header className="mb-8 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.36em] text-[var(--muted)]">Balmain swim dashboard</p>
-          <h1 className="mt-2 font-[var(--font-display)] text-5xl leading-none md:text-6xl">Fraser Facts</h1>
+          <p className="text-xs font-extrabold uppercase tracking-[0.3em] text-[var(--accent)]">✦ Balmain swim dashboard ✦</p>
+          <h1 className="rainbow-text mt-2 pb-1 font-display text-6xl font-bold leading-none md:text-7xl">Fraser Facts</h1>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--muted)]">
             Live advice for Dawn Fraser Baths using Beachwatch water-quality context, weather, tides, marine
             temperature, rainfall drag, direct sun heuristics, and the Balmain Water Polo calendar.
@@ -220,7 +238,7 @@ export function Dashboard() {
           <button
             type="button"
             onClick={() => void load(mode)}
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-white"
+            className="sticker inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-bold text-white transition hover:-translate-y-0.5"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             Refresh data
@@ -247,7 +265,7 @@ export function Dashboard() {
             <ConfidencePill confidence={derived.currentConfidence} />
             <ConfidencePill confidence={derived.bestConfidence} />
             <ConfidencePill confidence={data.confidences.openingHours} />
-            <span className="rounded-full border border-slate-200 bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+            <span className="rounded-full border-2 border-[#d4c7ff] bg-[#ece6ff] px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-[#7457e8]">
               {mode === "strict" ? "Strict water-quality mode" : "Balanced mode"}
             </span>
           </div>
@@ -265,9 +283,9 @@ export function Dashboard() {
           </div>
           <div className="grid gap-6 md:grid-cols-[1.1fr_0.9fr]">
             <div>
-              <p className="text-sm uppercase tracking-[0.24em] text-[var(--muted)]">Current score</p>
+              <p className="text-sm font-extrabold uppercase tracking-[0.2em] text-[var(--accent)]">Current score</p>
               <div className="mt-3 flex items-end gap-4">
-                <span className="font-[var(--font-display)] text-7xl leading-none">{current.score.toFixed(1)}</span>
+                <span className="rainbow-text font-display text-8xl font-bold leading-none">{current.score.toFixed(1)}</span>
                 <span className="pb-2 text-xl text-[var(--muted)]">/10</span>
               </div>
               <p
@@ -279,14 +297,14 @@ export function Dashboard() {
               </p>
               <p className="mt-5 max-w-2xl text-base leading-7 text-[var(--muted)]">{current.summary}</p>
               <div className="mt-6 grid gap-4 md:grid-cols-2">
-                <div className="rounded-[24px] border border-[var(--line)] bg-white/60 p-4">
-                  <p className="text-sm uppercase tracking-[0.22em] text-[var(--muted)]">Best time today</p>
+                <div className="rounded-[24px] border-[3px] border-[#ffe08a] bg-[linear-gradient(160deg,#fff8dc,#ffe9f3)] p-4">
+                  <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#c98a00]">⭐ Best time today</p>
                   <p className="mt-2 text-4xl font-semibold">{best.score.toFixed(1)} / 10</p>
                   <p className="mt-2 text-sm font-semibold text-[var(--accent)]">{derived.bestWindow}</p>
                   <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{derived.bestReason}</p>
                 </div>
-                <div className="rounded-[24px] border border-[var(--line)] bg-white/60 p-4">
-                  <p className="text-sm uppercase tracking-[0.22em] text-[var(--muted)]">Right now</p>
+                <div className="rounded-[24px] border-[3px] border-[#a8e8f5] bg-[linear-gradient(160deg,#e3f9ff,#efeaff)] p-4">
+                  <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#0b9bb5]">🌊 Right now</p>
                   <p className="mt-2 text-lg font-semibold">{weatherNow}</p>
                   <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
                     Tide {tideNow}. UV {uvText} now and {bestUvText} near the best window.
@@ -294,18 +312,18 @@ export function Dashboard() {
                 </div>
               </div>
             </div>
-            <div className="rounded-[32px] border border-[var(--line)] bg-[linear-gradient(180deg,rgba(255,255,255,0.7),rgba(211,231,236,0.62))] p-5">
-              <p className="text-center text-sm uppercase tracking-[0.24em] text-[var(--muted)]">Dawn Fraser mood</p>
+            <div className="rounded-[32px] border-[3px] border-[var(--line)] bg-[linear-gradient(180deg,#fff,#fff0f7)] p-5">
+              <p className="text-center text-sm font-extrabold uppercase tracking-[0.2em] text-[var(--accent)]">Mood buddy</p>
               <div className="mt-4 flex justify-center">
-                <DawnFace score={current.score} />
+                <DawnFace score={current.score} closed={!data.bathsStatus.isOpenNow} />
               </div>
             </div>
           </div>
         </div>
 
         <aside className="card rounded-[36px] p-6 md:p-8">
-          <p className="text-sm uppercase tracking-[0.24em] text-[var(--muted)]">Hourly outlook</p>
-          <h2 className="mt-3 font-[var(--font-display)] text-3xl">Score trend across the rest of today</h2>
+          <p className="text-sm font-extrabold uppercase tracking-[0.2em] text-[var(--accent)]">Hourly outlook</p>
+          <h2 className="mt-3 font-display text-3xl">Score trend across the rest of today</h2>
           <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
             The sparkline re-scores each hour using your local weight settings, so you can push the model harder on
             water quality or balance it toward comfort.
@@ -318,14 +336,16 @@ export function Dashboard() {
               .filter((hour) => new Date(hour.isoTime) >= new Date(current.isoTime))
               .slice(0, 5)
               .map((hour) => (
-                <div key={hour.isoTime} className="flex items-center justify-between rounded-2xl bg-white/60 px-4 py-3">
+                <div key={hour.isoTime} className="flex items-center justify-between rounded-2xl bg-white/80 px-4 py-3">
                   <div>
                     <p className="text-sm font-semibold">{hour.label}</p>
                     <p className="text-xs text-[var(--muted)]">
                       {hour.weatherLabel}, {hour.sunlightLabel.toLowerCase()}
                     </p>
                   </div>
-                  <p className="text-lg font-semibold text-[var(--accent)]">{hour.score.toFixed(1)}</p>
+                  <p className="rounded-full bg-[#ffe1ef] px-3 py-0.5 font-display text-lg font-semibold text-[var(--accent)]">
+                    {hour.score.toFixed(1)}
+                  </p>
                 </div>
               ))}
           </div>
@@ -338,49 +358,56 @@ export function Dashboard() {
           data.bathsStatus.statusLabel,
           data.bathsStatus.reason,
           data.confidences.openingHours,
-          <AlertTriangle className="h-5 w-5" />
+          <AlertTriangle className="h-5 w-5" />,
+          "coral"
         )}
         {factorCard(
           "Pollution risk",
           current.pollutionSummary,
           "Beachwatch carries the strongest scoring weight because pollution and water quality are your primary concern.",
           data.confidences.pollution,
-          <ShieldCheck className="h-5 w-5" />
+          <ShieldCheck className="h-5 w-5" />,
+          "mint"
         )}
         {factorCard(
           "Recent rainfall",
           `${toOneDecimal(current.rainfallLast24hMm) ?? "Unknown"} mm / 24h`,
           `48h ${toOneDecimal(current.rainfallLast48hMm) ?? "?"} mm, 72h ${toOneDecimal(current.rainfallLast72hMm) ?? "?"} mm`,
           data.confidences.rainfall,
-          <CloudSun className="h-5 w-5" />
+          <CloudSun className="h-5 w-5" />,
+          "lavender"
         )}
         {factorCard(
           "Weather",
           weatherNow,
           `Cloud cover ${toOneDecimal(current.cloudCoverPct) ?? "?"}% and UV ${uvText}. Best window UV ${bestUvText}.`,
           data.confidences.weather,
-          <Thermometer className="h-5 w-5" />
+          <Thermometer className="h-5 w-5" />,
+          "sunny"
         )}
         {factorCard(
           "Wind",
           current.windSpeedKph !== undefined ? `${toOneDecimal(current.windSpeedKph)} km/h ${windDirectionLabel(current.windDirectionDeg)}` : "Unknown",
           "Lower wind helps comfort and water surface quality.",
           data.confidences.weather,
-          <Wind className="h-5 w-5" />
+          <Wind className="h-5 w-5" />,
+          "aqua"
         )}
         {factorCard(
           "Water temperature",
           current.waterTempC !== undefined ? `${toOneDecimal(current.waterTempC)}°C` : "Unknown",
           "Nearest marine grid estimate for Sydney Harbour water near the baths.",
           data.confidences.marine,
-          <Droplets className="h-5 w-5" />
+          <Droplets className="h-5 w-5" />,
+          "pink"
         )}
         {factorCard(
           "Tide",
           tideNow,
           "Lower tide scores better in this model. Falling or low tide gets a modest boost.",
           data.confidences.tides,
-          <Waves className="h-5 w-5" />
+          <Waves className="h-5 w-5" />,
+          "lavender"
         )}
         {factorCard(
           "Sun on the baths",
@@ -392,36 +419,41 @@ export function Dashboard() {
             level: "medium",
             note: "Directional heuristic rather than site-specific geometry."
           },
-          <Gauge className="h-5 w-5" />
+          <Gauge className="h-5 w-5" />,
+          "sunny"
         )}
         {factorCard(
           "Water polo",
           current.waterPoloActive === null ? "Unknown" : current.waterPoloActive ? "On" : "Not on",
           current.waterPoloNote,
           data.confidences.waterPolo,
-          <ArrowUpRight className="h-5 w-5" />
+          <ArrowUpRight className="h-5 w-5" />,
+          "pink"
         )}
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <article className="card rounded-[32px] p-6 md:p-7">
-          <p className="text-sm uppercase tracking-[0.24em] text-[var(--muted)]">Why the score looks like this</p>
-          <h2 className="mt-3 font-[var(--font-display)] text-3xl">Transparent scoring</h2>
+          <p className="text-sm font-extrabold uppercase tracking-[0.2em] text-[var(--accent)]">Why the score looks like this</p>
+          <h2 className="mt-3 font-display text-3xl">Transparent scoring</h2>
           <p className="mt-4 text-sm leading-6 text-[var(--muted)]">
             Each factor is normalized to a 0-1 preference score, then combined as a weighted sum out of 10. UV is
             displayed prominently but is not a major penalty on its own.
           </p>
           <div className="mt-6 space-y-3">
             {current.scoreBreakdown.map((item) => (
-              <div key={item.key} className="rounded-2xl bg-white/60 p-4">
+              <div key={item.key} className="rounded-2xl bg-white/80 p-4">
                 <div className="mb-2 flex items-center justify-between text-sm">
                   <span className="font-semibold capitalize">{item.key}</span>
                   <span className="text-[var(--muted)]">
                     weight {item.weight.toFixed(2)} • contribution {item.contribution.toFixed(2)}
                   </span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                  <div className="h-full rounded-full bg-[var(--accent)]" style={{ width: `${item.normalized * 100}%` }} />
+                <div className="h-3 overflow-hidden rounded-full bg-[#f3eefc]">
+                  <div
+                    className="h-full rounded-full bg-[linear-gradient(90deg,#ff4f9a,#ffc93c,#1fc8e3)]"
+                    style={{ width: `${item.normalized * 100}%` }}
+                  />
                 </div>
               </div>
             ))}
@@ -429,11 +461,11 @@ export function Dashboard() {
         </article>
 
         <article className="card rounded-[32px] p-6 md:p-7">
-          <p className="text-sm uppercase tracking-[0.24em] text-[var(--muted)]">Advisory notes</p>
-          <h2 className="mt-3 font-[var(--font-display)] text-3xl">Assumptions and sources</h2>
+          <p className="text-sm font-extrabold uppercase tracking-[0.2em] text-[var(--accent)]">Advisory notes</p>
+          <h2 className="mt-3 font-display text-3xl">Assumptions and sources</h2>
           <ul className="mt-5 space-y-3 text-sm leading-6 text-[var(--muted)]">
             {data.assumptions.map((assumption) => (
-              <li key={assumption} className="rounded-2xl bg-white/60 px-4 py-3">
+              <li key={assumption} className="rounded-2xl bg-white/80 px-4 py-3">
                 {assumption}
               </li>
             ))}
@@ -448,8 +480,8 @@ export function Dashboard() {
       <section className="mt-8 card rounded-[32px] p-6 md:p-7">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-[var(--muted)]">Sources</p>
-            <h2 className="mt-2 font-[var(--font-display)] text-3xl">Last updated and provenance</h2>
+            <p className="text-sm font-extrabold uppercase tracking-[0.2em] text-[var(--accent)]">Sources</p>
+            <h2 className="mt-2 font-display text-3xl">Last updated and provenance</h2>
           </div>
           <p className="text-sm text-[var(--muted)]">Dashboard refresh: {formatSydneyDateTime(data.fetchedAt)}</p>
         </div>
@@ -460,7 +492,7 @@ export function Dashboard() {
               href={source.url}
               target="_blank"
               rel="noreferrer"
-              className="rounded-[24px] border border-[var(--line)] bg-white/60 p-4 transition hover:bg-white"
+              className="rounded-[24px] border border-[var(--line)] bg-white/80 p-4 transition hover:bg-white"
             >
               <div className="flex items-center justify-between gap-3">
                 <p className="font-semibold">{source.name}</p>

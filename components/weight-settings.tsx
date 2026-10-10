@@ -38,17 +38,17 @@ export function WeightSettings({
       <button
         type="button"
         onClick={onToggle}
-        className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-white"
+        className="sticker inline-flex items-center gap-2 rounded-full border-2 border-[var(--line)] bg-white px-4 py-2 text-sm font-bold text-[var(--text)] transition hover:-translate-y-0.5"
       >
         <SlidersHorizontal className="h-4 w-4" />
         Settings
       </button>
       {open ? (
-        <div className="absolute right-0 top-14 z-20 w-full max-w-md rounded-[28px] border border-[var(--line)] bg-white/95 p-5 shadow-2xl backdrop-blur">
+        <div className="absolute right-0 top-14 z-20 w-full max-w-md rounded-[28px] border-[3px] border-[var(--line)] bg-white/95 p-5 shadow-2xl backdrop-blur">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.26em] text-[var(--muted)]">Scoring</p>
-              <h3 className="font-[var(--font-display)] text-2xl">Local tuning</h3>
+              <h3 className="font-display text-2xl">Local tuning</h3>
             </div>
             <button type="button" onClick={onReset} className="text-sm font-semibold text-[var(--accent)]">
               Reset
