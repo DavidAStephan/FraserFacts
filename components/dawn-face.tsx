@@ -126,33 +126,40 @@ function Heart({ x, y, size, color }: { x: number; y: number; size: number; colo
   );
 }
 
+// Tears and sweat sit on the face, so they move with it.
+function FaceExtras({ mood }: { mood: Mood }) {
+  if (mood === "mixed" || mood === "poor") {
+    return <path d="M150 92 Q158 106 150 112 Q142 106 150 92 Z" fill="#9fe6f5" stroke="#1fc8e3" strokeWidth={2} />;
+  }
+  if (mood === "veryPoor") {
+    return <path d="M70 138 Q76 150 70 156 Q64 150 70 138 Z" fill="#9fe6f5" stroke="#1fc8e3" strokeWidth={2} />;
+  }
+  if (mood === "miserable") {
+    return (
+      <g stroke="#9fe6f5" strokeWidth={7} strokeLinecap="round" fill="none">
+        <path d="M66 128 Q60 146 62 160" />
+        <path d="M134 128 Q140 146 138 160" />
+      </g>
+    );
+  }
+  return null;
+}
+
 function Extras({ mood }: { mood: Mood }) {
   const items: ReactNode[] = [];
   if (mood === "excellent" || mood === "good" || mood === "okay") {
     items.push(
-      <Sparkle key="s1" x={30} y={60} size={11} color="#ffc93c" delay="0s" />,
-      <Sparkle key="s2" x={172} y={92} size={8} color="#1fc8e3" delay="0.8s" />,
-      <Sparkle key="s3" x={160} y={34} size={6} color="#ff4f9a" delay="1.4s" />
+      <Sparkle key="s1" x={22} y={40} size={11} color="#ffc93c" delay="0s" />,
+      <Sparkle key="s2" x={180} y={150} size={8} color="#1fc8e3" delay="0.8s" />,
+      <Sparkle key="s3" x={176} y={26} size={6} color="#ff4f9a" delay="1.4s" />
     );
   }
   if (mood === "excellent") {
-    items.push(<Heart key="h1" x={170} y={140} size={16} color="#ff4f9a" />, <Heart key="h2" x={26} y={128} size={12} color="#ff8fb8" />);
-  }
-  if (mood === "mixed" || mood === "poor") {
-    items.push(<path key="sweat" d="M150 92 Q158 106 150 112 Q142 106 150 92 Z" fill="#9fe6f5" stroke="#1fc8e3" strokeWidth={2} />);
-  }
-  if (mood === "veryPoor") {
-    items.push(<path key="tear" d="M70 138 Q76 150 70 156 Q64 150 70 138 Z" fill="#9fe6f5" stroke="#1fc8e3" strokeWidth={2} />);
-  }
-  if (mood === "miserable") {
-    items.push(
-      <path key="t1" d="M66 128 Q60 150 64 172" stroke="#9fe6f5" strokeWidth={7} strokeLinecap="round" fill="none" />,
-      <path key="t2" d="M134 128 Q140 150 136 172" stroke="#9fe6f5" strokeWidth={7} strokeLinecap="round" fill="none" />
-    );
+    items.push(<Heart key="h1" x={24} y={150} size={14} color="#ff4f9a" />, <Heart key="h2" x={156} y={16} size={11} color="#ff8fb8" />);
   }
   if (mood === "sleeping") {
     items.push(
-      <text key="z" x={148} y={70} fontFamily="var(--font-display)" fontWeight={700} fill="#9b7bff">
+      <text key="z" x={150} y={40} fontFamily="var(--font-display)" fontWeight={700} fill="#9b7bff">
         <tspan fontSize={22}>Z</tspan>
         <tspan fontSize={16} dx={2} dy={-12}>z</tspan>
         <tspan fontSize={12} dx={2} dy={-10}>z</tspan>
@@ -160,6 +167,33 @@ function Extras({ mood }: { mood: Mood }) {
     );
   }
   return <>{items}</>;
+}
+
+// Three feathery gill fronds on one side of the head; mirrored for the other side.
+function Gills({ side }: { side: "left" | "right" }) {
+  const fronds = [
+    { x: 48, y: 62, angle: -50 },
+    { x: 36, y: 92, angle: -5 },
+    { x: 46, y: 122, angle: 40 }
+  ];
+  return (
+    <g transform={side === "right" ? "translate(200 0) scale(-1 1)" : undefined}>
+      {fronds.map(({ x, y, angle }, index) => (
+        <g key={index} transform={`translate(${x} ${y}) rotate(${angle})`}>
+          <g className="animate-wiggle" style={{ animationDelay: `${index * 0.3}s` }}>
+            <path d="M14 0 L-22 0" stroke="#e8357f" strokeWidth={6} strokeLinecap="round" />
+            {[-20, -10].map((cx) => (
+              <g key={cx}>
+                <ellipse cx={cx} cy={-6} rx={4} ry={6} fill="#ff4f9a" stroke="#2b2350" strokeWidth={2} transform={`rotate(-20 ${cx} -6)`} />
+                <ellipse cx={cx} cy={6} rx={4} ry={6} fill="#ff4f9a" stroke="#2b2350" strokeWidth={2} transform={`rotate(20 ${cx} 6)`} />
+              </g>
+            ))}
+            <circle cx={-27} cy={0} r={5.5} fill="#ff4f9a" stroke="#2b2350" strokeWidth={2} />
+          </g>
+        </g>
+      ))}
+    </g>
+  );
 }
 
 export function DawnFace({ score, closed = false }: { score: number; closed?: boolean }) {
@@ -171,34 +205,47 @@ export function DawnFace({ score, closed = false }: { score: number; closed?: bo
       className="relative flex aspect-square w-full max-w-[320px] flex-col items-center justify-center overflow-hidden rounded-[32px] border-[3px] border-white sticker"
       style={{ background: `linear-gradient(160deg, ${tint[0]}, ${tint[1]})` }}
     >
-      <svg viewBox="0 0 200 200" role="img" aria-label={`Izzy the water drop: ${label}`} className="h-[78%] w-[78%]">
+      <svg viewBox="0 0 200 200" role="img" aria-label={`Izzy the axolotl: ${label}`} className="h-[78%] w-[78%]">
         <defs>
-          <linearGradient id="dropBody" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#8be9ff" />
-            <stop offset="100%" stopColor="#38b6ff" />
+          <linearGradient id="axolotlSkin" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="#ffd3e6" />
+            <stop offset="100%" stopColor="#ffa6cc" />
           </linearGradient>
         </defs>
-        <ellipse cx={100} cy={190} rx={46} ry={6} fill="#2b2350" opacity={0.1} />
+        <ellipse cx={100} cy={192} rx={52} ry={6} fill="#2b2350" opacity={0.1} />
         <g className={mood === "sleeping" ? undefined : "animate-bob"}>
+          {/* Tail */}
           <path
-            d="M100 22 C100 22 40 92 40 128 C40 162 67 186 100 186 C133 186 160 162 160 128 C160 92 100 22 100 22 Z"
-            fill="url(#dropBody)"
+            d="M128 168 Q160 176 184 150 Q176 182 132 184 Z"
+            fill="#ffc2dc"
             stroke={INK}
-            strokeWidth={4}
+            strokeWidth={3.5}
             strokeLinejoin="round"
           />
-          <path d="M70 92 Q60 110 60 128" stroke="#fff" strokeWidth={7} strokeLinecap="round" fill="none" opacity={0.6} />
-          {/* Little flower clip */}
-          <g transform="translate(124 64)">
+          {/* Body, belly and little arms */}
+          <ellipse cx={100} cy={162} rx={40} ry={26} fill="url(#axolotlSkin)" stroke={INK} strokeWidth={4} />
+          <ellipse cx={100} cy={168} rx={22} ry={14} fill="#ffe8f2" />
+          <ellipse cx={68} cy={170} rx={9} ry={6} fill="#ffb3d4" stroke={INK} strokeWidth={3} transform="rotate(-25 68 170)" />
+          <ellipse cx={132} cy={170} rx={9} ry={6} fill="#ffb3d4" stroke={INK} strokeWidth={3} transform="rotate(25 132 170)" />
+          <Gills side="left" />
+          <Gills side="right" />
+          {/* Head */}
+          <ellipse cx={100} cy={96} rx={60} ry={50} fill="url(#axolotlSkin)" stroke={INK} strokeWidth={4} />
+          <path d="M66 62 Q76 54 90 52" stroke="#fff" strokeWidth={6} strokeLinecap="round" fill="none" opacity={0.7} />
+          {/* Flower clip */}
+          <g transform="translate(132 54)">
             {[0, 72, 144, 216, 288].map((angle) => (
-              <ellipse key={angle} cx={0} cy={-8} rx={6} ry={8} fill="#ff8fb8" transform={`rotate(${angle})`} stroke={INK} strokeWidth={2} />
+              <ellipse key={angle} cx={0} cy={-8} rx={6} ry={8} fill="#fff" transform={`rotate(${angle})`} stroke={INK} strokeWidth={2} />
             ))}
             <circle r={5} fill="#ffc93c" stroke={INK} strokeWidth={2} />
           </g>
-          <ellipse cx={62} cy={142} rx={11} ry={6.5} fill="#ff7eb6" opacity={0.6} />
-          <ellipse cx={138} cy={142} rx={11} ry={6.5} fill="#ff7eb6" opacity={0.6} />
-          <Eyes mood={mood} />
-          <Mouth mood={mood} />
+          <ellipse cx={58} cy={114} rx={11} ry={6.5} fill="#ff4f9a" opacity={0.35} />
+          <ellipse cx={142} cy={114} rx={11} ry={6.5} fill="#ff4f9a" opacity={0.35} />
+          <g transform="translate(0 -24)">
+            <Eyes mood={mood} />
+            <Mouth mood={mood} />
+            <FaceExtras mood={mood} />
+          </g>
         </g>
         <Extras mood={mood} />
       </svg>

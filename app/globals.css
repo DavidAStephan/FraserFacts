@@ -109,6 +109,17 @@ body::before {
   50% { opacity: 1; transform: scale(1.1); }
 }
 
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(6deg); }
+}
+
+.animate-wiggle {
+  animation: wiggle 2.6s ease-in-out infinite;
+  transform-origin: right center;
+  transform-box: fill-box;
+}
+
 .animate-bob {
   animation: bob 3.2s ease-in-out infinite;
 }
@@ -121,6 +132,7 @@ body::before {
 
 @media (prefers-reduced-motion: reduce) {
   .animate-bob,
+  .animate-wiggle,
   .animate-twinkle {
     animation: none;
   }
