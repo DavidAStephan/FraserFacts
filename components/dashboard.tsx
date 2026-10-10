@@ -19,13 +19,14 @@ import { average, confidenceLevel, formatSydneyDateTime, toOneDecimal, windDirec
 import { ConfidencePill } from "@/components/confidence-pill";
 import { DawnFace } from "@/components/dawn-face";
 import { HourlyChart } from "@/components/hourly-chart";
-import { WeightSettings } from "@/components/weight-settings";
+import { MAX_WEIGHT_POINTS, WeightSettings } from "@/components/weight-settings";
 import { Sakura } from "@/components/sakura";
 
 const STORAGE_KEY = "fraser-facts-settings-v1";
 
 function normalizeWeights(weights: ScoringWeights): ScoringWeights {
   const total = Object.values(weights).reduce((sum, value) => sum + value, 0);
+  if (total <= 0) return DEFAULT_WEIGHTS.balanced;
   return Object.fromEntries(
     Object.entries(weights).map(([key, value]) => [key, value / total])
   ) as ScoringWeights;
@@ -45,9 +46,22 @@ function readSettings(): StoredSettings {
   }
 }
 
+// The sliders work in "importance points" (0-50); a factor's weight is its share of the total points.
+function toPoints(weights: ScoringWeights): ScoringWeights {
+  const normalized = normalizeWeights(weights);
+  return Object.fromEntries(
+    Object.entries(normalized).map(([key, value]) => [key, Math.min(MAX_WEIGHT_POINTS, Math.round(value * 100))])
+  ) as ScoringWeights;
+}
+
 function savedWeightsFor(mode: ScoreMode, settings: StoredSettings): ScoringWeights {
+  const defaults = toPoints(DEFAULT_WEIGHTS[mode]);
   const saved = settings.weights?.[mode];
-  return saved ? normalizeWeights({ ...DEFAULT_WEIGHTS[mode], ...saved }) : DEFAULT_WEIGHTS[mode];
+  if (!saved) return defaults;
+  const merged = { ...defaults, ...saved };
+  const values = Object.values(merged);
+  // Older versions stored fractions (0-1) rather than points.
+  return values.every((value) => value <= 1) ? toPoints(merged) : merged;
 }
 
 const TONES = {
@@ -96,7 +110,7 @@ export function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [mode, setMode] = useState<ScoreMode>("balanced");
-  const [weights, setWeights] = useState<ScoringWeights>(DEFAULT_WEIGHTS.balanced);
+  const [weights, setWeights] = useState<ScoringWeights>(() => toPoints(DEFAULT_WEIGHTS.balanced));
   const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   async function load(nextMode = mode) {
@@ -152,6 +166,7 @@ export function Dashboard() {
     const scored = scoreTimeline(data.timeline, normalizedWeights);
     const { current, best, bestWindow } = findBestWindow(scored, data.current.isoTime);
     return {
+      normalizedWeights,
       scored,
       current,
       best,
@@ -172,11 +187,11 @@ export function Dashboard() {
   }, [data, weights]);
 
   function updateWeight(key: keyof ScoringWeights, value: number) {
-    setWeights((current) => normalizeWeights({ ...current, [key]: value }));
+    setWeights((current) => ({ ...current, [key]: value }));
   }
 
   function resetWeights() {
-    setWeights(DEFAULT_WEIGHTS[mode]);
+    setWeights(toPoints(DEFAULT_WEIGHTS[mode]));
   }
 
   if (loading && !data) {
@@ -235,7 +250,7 @@ export function Dashboard() {
             <h1 className="anime-title rainbow-text pb-2 font-display text-6xl font-bold leading-none md:text-7xl">Fraser Facts</h1>
             <span
               title="Kira kira means sparkly!"
-              className="mt-1 rotate-12 rounded-full border-[3px] border-[#2b2350] bg-[#ffc93c] px-3 py-1 font-display text-sm font-bold text-[#2b2350] sticker"
+              className="mt-1 shrink-0 whitespace-nowrap rotate-12 rounded-full border-[3px] border-[#2b2350] bg-[#ffc93c] px-3 py-1 font-display text-sm font-bold text-[#2b2350] sticker"
             >
               キラキラ ✦
             </span>
@@ -266,6 +281,8 @@ export function Dashboard() {
             weights={weights}
             onWeightChange={updateWeight}
             onReset={resetWeights}
+            previewScore={data.bathsStatus.isOpenNow ? derived.current.score : undefined}
+            previewBestWindow={derived.bestWindow}
           />
         </div>
       </header>
@@ -289,7 +306,7 @@ export function Dashboard() {
           >
             {data.bathsStatus.statusLabel}: {data.bathsStatus.reason}
             {!data.bathsStatus.isOpenNow && data.bathsStatus.nextOpenWindow
-              ? ` Next open today around ${data.bathsStatus.nextOpenWindow}.`
+              ? ` Opens today at ${data.bathsStatus.nextOpenWindow}.`
               : ""}
           </div>
           <div className="grid gap-6 md:grid-cols-[1.1fr_0.9fr]">
@@ -341,7 +358,7 @@ export function Dashboard() {
             water quality or balance it toward comfort.
           </p>
           <div className="mt-6">
-            <HourlyChart timeline={data.timeline} weights={weights} mode={mode} />
+            <HourlyChart timeline={data.timeline} weights={derived.normalizedWeights} mode={mode} />
           </div>
           <div className="mt-4 grid gap-3">
             {derived.scored

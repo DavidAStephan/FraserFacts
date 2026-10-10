@@ -542,12 +542,16 @@ function buildTimeline(
       beachwatchProps?.pollutionForecast,
       beachwatchProps?.latestResultRating
     );
-    const bathsStatus = getBathsOpenStatus(time, openingHours, beachwatchProps?.pollutionForecast);
+    const isNow = now >= date.getTime() && now < date.getTime() + 60 * 60 * 1000;
+    // The current hour uses the actual time; other hours count as open if the baths are open for any part of them.
+    const bathsStatus = isNow
+      ? getBathsOpenStatus(new Date(now).toISOString(), openingHours, beachwatchProps?.pollutionForecast)
+      : getBathsOpenStatus(time, openingHours, beachwatchProps?.pollutionForecast, 60);
 
       return {
         isoTime: time,
         label: formatSydneyTime(time),
-        isNow: now >= date.getTime() && now < date.getTime() + 60 * 60 * 1000,
+        isNow,
         isBathsOpen: bathsStatus.isOpen,
         openStatusReason: bathsStatus.reason,
         weatherCode: forecast.hourly?.weather_code?.[index],
@@ -634,7 +638,11 @@ export async function getConditions(mode: ScoreMode = "balanced"): Promise<Aggre
 
   const scored = scoreTimeline(timeline, DEFAULT_WEIGHTS[mode]);
   const { current, best: bestToday, bestWindow } = findBestWindow(scored);
-  const nextOpenHour = scored.slice(scored.indexOf(current)).find((hour) => hour.isBathsOpen);
+  const nowStatus = getBathsOpenStatus(
+    new Date().toISOString(),
+    openingHours,
+    (beachwatch as BeachwatchFeatureCollection).features?.[0]?.properties?.pollutionForecast
+  );
 
   const weatherConfidence = {
     label: "Weather",
@@ -675,19 +683,12 @@ export async function getConditions(mode: ScoreMode = "balanced"): Promise<Aggre
     source: { name: "Open-Meteo", url: "https://open-meteo.com/" }
   } satisfies MetricConfidence;
 
-  const bathsStatus = current.isBathsOpen
-    ? {
-        isOpenNow: true,
-        statusLabel: "Open now",
-        reason: current.openStatusReason,
-        nextOpenWindow: undefined
-      }
-    : {
-        isOpenNow: false,
-        statusLabel: "Closed now",
-        reason: current.openStatusReason,
-        nextOpenWindow: nextOpenHour ? formatSydneyTime(nextOpenHour.isoTime) : undefined
-      };
+  const bathsStatus = {
+    isOpenNow: nowStatus.isOpen,
+    statusLabel: nowStatus.isOpen ? "Open now" : "Closed now",
+    reason: nowStatus.reason,
+    nextOpenWindow: nowStatus.opensAt
+  };
 
   return {
     fetchedAt: new Date().toISOString(),
@@ -767,7 +768,13 @@ function parseMinutes(timeText: string) {
   return hours * 60 + minutes;
 }
 
-function getBathsOpenStatus(isoTime: string, openingHours: OpeningHoursData, pollutionForecast?: string) {
+// Pass spanMinutes = 60 to ask "are the baths open at any point in this hour?" (e.g. 7-8am counts when they open at 7.15am).
+function getBathsOpenStatus(
+  isoTime: string,
+  openingHours: OpeningHoursData,
+  pollutionForecast?: string,
+  spanMinutes = 0
+): { isOpen: boolean; reason: string; opensAt?: string } {
   const { month, hour, minute, dateKey, year } = sydneyParts(new Date(isoTime));
   const minutesNow = hour * 60 + minute;
   const easterSunday = calculateEasterSunday(year);
@@ -821,16 +828,25 @@ function getBathsOpenStatus(isoTime: string, openingHours: OpeningHoursData, pol
     };
   }
 
-  if (minutesNow < openMinutes || minutesNow >= closeMinutes) {
+  const hours = `${monthRules.open}-${monthRules.close}`;
+  const windowEnd = minutesNow + Math.max(spanMinutes, 1);
+  if (minutesNow >= closeMinutes || windowEnd <= openMinutes) {
     return {
       isOpen: false,
-      reason: `Closed outside official hours (${monthRules.open}-${monthRules.close}).`
+      reason: `Closed outside official hours (${hours}).`,
+      opensAt: minutesNow < openMinutes ? monthRules.open : undefined
     };
   }
 
+  if (minutesNow < openMinutes) {
+    return { isOpen: true, reason: `Opens at ${monthRules.open} (official hours ${hours}).` };
+  }
+  if (windowEnd > closeMinutes) {
+    return { isOpen: true, reason: `Closes at ${monthRules.close} (official hours ${hours}).` };
+  }
   return {
     isOpen: true,
-    reason: `Within official hours (${monthRules.open}-${monthRules.close}).`
+    reason: `Within official hours (${hours}).`
   };
 }
 

@@ -31,6 +31,7 @@ Next.js + React + TypeScript is the best fit here because it gives you:
 - A Beachwatch "Pollution likely" (red) forecast is treated as a closure, matching the Inner West Council notice.
 - All times are calculated in Sydney time regardless of the server's timezone, so the app behaves the same locally and on a UTC cloud host.
 - Missing sources lower confidence and surface `Unknown`; the app does not fabricate missing metrics.
+- "Open now" uses the actual current time. In the hourly outlook, an hour counts as open if the baths are open for any part of it (for example 7-8am when they open at 7.15am).
 
 ## Setup
 
@@ -83,7 +84,7 @@ There are two built-in modes:
 - `strict`: heavier water-quality weighting
 - `balanced`: still prioritizes pollution, but gives comfort factors more room
 
-The settings drawer stores your local weight tweaks in browser `localStorage`.
+The **Tune the score** panel lets each visitor set how much every factor matters (0 turns a factor off). Each factor's weight is its share of the total, shown as a percentage, and the panel previews the score as you drag. Settings are saved per browser in `localStorage`.
 
 ## Deployment
 
