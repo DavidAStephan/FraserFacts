@@ -208,8 +208,8 @@ export function DawnFace({ score, closed = false }: { score: number; closed?: bo
       <svg viewBox="0 0 200 200" role="img" aria-label={`Izzy the axolotl: ${label}`} className="h-[78%] w-[78%]">
         <defs>
           <linearGradient id="axolotlSkin" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#ffd3e6" />
-            <stop offset="100%" stopColor="#ffa6cc" />
+            <stop offset="0%" stopColor="#d4f4ff" />
+            <stop offset="100%" stopColor="#86d6ff" />
           </linearGradient>
         </defs>
         <ellipse cx={100} cy={192} rx={52} ry={6} fill="#2b2350" opacity={0.1} />
@@ -217,16 +217,16 @@ export function DawnFace({ score, closed = false }: { score: number; closed?: bo
           {/* Tail */}
           <path
             d="M128 168 Q160 176 184 150 Q176 182 132 184 Z"
-            fill="#ffc2dc"
+            fill="#a9e4ff"
             stroke={INK}
             strokeWidth={3.5}
             strokeLinejoin="round"
           />
           {/* Body, belly and little arms */}
           <ellipse cx={100} cy={162} rx={40} ry={26} fill="url(#axolotlSkin)" stroke={INK} strokeWidth={4} />
-          <ellipse cx={100} cy={168} rx={22} ry={14} fill="#ffe8f2" />
-          <ellipse cx={68} cy={170} rx={9} ry={6} fill="#ffb3d4" stroke={INK} strokeWidth={3} transform="rotate(-25 68 170)" />
-          <ellipse cx={132} cy={170} rx={9} ry={6} fill="#ffb3d4" stroke={INK} strokeWidth={3} transform="rotate(25 132 170)" />
+          <ellipse cx={100} cy={168} rx={22} ry={14} fill="#effbff" />
+          <ellipse cx={68} cy={170} rx={9} ry={6} fill="#9fdfff" stroke={INK} strokeWidth={3} transform="rotate(-25 68 170)" />
+          <ellipse cx={132} cy={170} rx={9} ry={6} fill="#9fdfff" stroke={INK} strokeWidth={3} transform="rotate(25 132 170)" />
           <Gills side="left" />
           <Gills side="right" />
           {/* Head */}
@@ -235,12 +235,12 @@ export function DawnFace({ score, closed = false }: { score: number; closed?: bo
           {/* Flower clip */}
           <g transform="translate(132 54)">
             {[0, 72, 144, 216, 288].map((angle) => (
-              <ellipse key={angle} cx={0} cy={-8} rx={6} ry={8} fill="#fff" transform={`rotate(${angle})`} stroke={INK} strokeWidth={2} />
+              <ellipse key={angle} cx={0} cy={-8} rx={6} ry={8} fill="#ff8fb8" transform={`rotate(${angle})`} stroke={INK} strokeWidth={2} />
             ))}
             <circle r={5} fill="#ffc93c" stroke={INK} strokeWidth={2} />
           </g>
-          <ellipse cx={58} cy={114} rx={11} ry={6.5} fill="#ff4f9a" opacity={0.35} />
-          <ellipse cx={142} cy={114} rx={11} ry={6.5} fill="#ff4f9a" opacity={0.35} />
+          <ellipse cx={58} cy={114} rx={11} ry={6.5} fill="#ff4f9a" opacity={0.5} />
+          <ellipse cx={142} cy={114} rx={11} ry={6.5} fill="#ff4f9a" opacity={0.5} />
           <g transform="translate(0 -24)">
             <Eyes mood={mood} />
             <Mouth mood={mood} />
